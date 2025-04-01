@@ -1,0 +1,13 @@
+id,source,target(zh-CN),target(en-US),target(zh-HK)
+ccfe-000000001,企业ID,企业ID,Enterprise ID,
+ccfe-000000002,请输入企业ID,请输入企业ID,Please enter the enterprise ID,
+ccfe-000000003,修改企业标识会影响所有用户的登录账号，修改后要使用带有新后缀名的账号才能成功登录客户端。例如原登录账号为test01.ABCD，更新企业标识为AAAA，则登录账号会更新为test01.AAAA,修改企业标识会影响所有用户的登录账号，修改后要使用带有新后缀名的账号才能成功登录客户端。例如原登录账号为test01.ABCD，更新企业标识为AAAA，则登录账号会更新为test01.AAAA,"Modifying the enterprise ID will affect the login accounts of all users. After modification, you must use an account with a new suffix to successfully log in to the client. For example, if the original login account is test01.ABCD and the enterprise ID is updated to AAAA, the login account will be updated to test01.AAAA",
+ccfe-000000007,修改,修改,modify,
+ccfe-000000008,修改企业ID成功,修改企业ID成功,Successfully modified enterprise ID,
+ccfe-000000009,修改企业ID失败,修改企业ID失败,Failed to modify enterprise ID,
+ccfe-000000010,配置信息,配置信息,configuration information,
+ccfe-000000011,配置项,配置项,Configuration Item,
+ccfe-000000012,双因子认证登录,双因子认证登录,Dual factor authentication login,
+ccfe-000000013,开启双因子认证登录后，若政企版用户有绑定手机号并,开启双因子认证登录后，若政企版用户有绑定手机号并,"After the dual factor authentication login is enabled, if the government enterprise version user has a bound mobile phone number and",
+ccfe-000000017,关闭,关闭,close,
+ccfe-000000018,开启,开启,open,
