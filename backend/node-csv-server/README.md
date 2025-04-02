@@ -9,3 +9,26 @@
 - data 放置资源文件
 - interface 放置访问的接口
 - scripts 放置操作资源文件的服务（对资源的写操作需要具备事务控制能力）
+
+# 接口
+
+```sh
+# 获取词条列表
+curl -X GET http://localhost:3000/api/getBingList \
+-H "Content-Type: application/json"
+
+# 新增词条翻译项
+curl -X POST http://localhost:3000/api/addBing \
+-H "Content-Type: application/json" \
+-d '{"id": "", "source": "请输入", "target": {"en-US": "please input"}}'
+
+# 编辑词条翻译项
+curl -X PUT http://localhost:3000/api/updateBing \
+-H "Content-Type: application/json" \
+-d '{"id": "", "source": "请输入", "target": {"en-US": "please input"}}'
+
+# 删除词条
+curl -X DELETE http://localhost:3000/api/del \
+-H "Content-Type: application/json" \
+-d '{"id": ""}'
+```
