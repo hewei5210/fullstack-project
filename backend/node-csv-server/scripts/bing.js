@@ -155,13 +155,9 @@ async function init() {
 
   console.log("=== Global bing list was ready! ===");
 
-  let globalIDExtra = loadExtraIDList();
+  loadExtraIDList();
 
   console.log("=== Global extra id was ready! ===");
-
-  console.log("applyNewID:", applyNewID());
-
-  console.log(globalIDExtra);
 }
 
 // 提交不同类型修改，使用数据副本进行处理，若成功写文件再同步到内存。
@@ -281,12 +277,19 @@ async function del() {
   });
 }
 
+function getList() {
+  return globalBingList.slice();
+}
+
 async function importFile() {}
 
 async function exportFile() {}
 
-exports.init = init;
-exports.add = add;
-exports.update = update;
-exports.importFile = importFile;
-exports.exportFile = exportFile;
+module.exports = {
+  init,
+  add,
+  update,
+  getList,
+  importFile,
+  exportFile,
+};
