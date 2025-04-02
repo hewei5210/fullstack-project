@@ -1,11 +1,12 @@
 <template>
   <el-container class="layout-container-demo" style="height: 100vh">
-    <el-aside width="200px" style="background: #001529">
+    <el-aside width="200px" style="background: #f5f5f5">
       <el-menu
         router
         :default-active="$route.path"
-        background-color="#001529"
-        text-color="#fff"
+        background-color="#f5f5f5"
+        text-color="#303030"
+        :popper-append-to-body="false"
       >
         <el-menu-item index="/">
           <el-icon><house /></el-icon>
@@ -48,27 +49,32 @@
   </el-container>
 </template>
 
-<script lang="ts" setup>
-import { ref } from "vue";
-import { Menu as IconMenu, Message, Setting } from "@element-plus/icons-vue";
-
-const item = {
-  date: "2016-05-02",
-  name: "Tom",
-  address: "No. 189, Grove St, Los Angeles",
-};
-const tableData = ref(Array.from({ length: 20 }).fill(item));
-</script>
-
 <style scoped>
 .layout-container-demo .el-header {
   position: relative;
-  background-color: var(--el-color-primary-light-7);
-  color: var(--el-text-color-primary);
+  background-color: #f5f5f5;
+  color: #303030;
 }
-.layout-container-demo .el-aside {
-  color: var(--el-text-color-primary);
-  background: var(--el-color-primary-light-8);
+
+/* 激活项背景色 */
+:deep(.el-menu-item.is-active) {
+  background-color: #e8e8e8 !important;
+  border-radius: 4px;
+}
+
+/* 激活项文字颜色 */
+:deep(.el-menu-item.is-active) span {
+  color: #303030 !important;
+}
+
+/* 激活项图标颜色 */
+:deep(.el-menu-item.is-active) .el-icon {
+  color: #303030 !important;
+}
+
+/* 悬停效果 */
+:deep(.el-menu-item:hover) {
+  background-color: #f0f0f0 !important;
 }
 .layout-container-demo .el-menu {
   border-right: none;

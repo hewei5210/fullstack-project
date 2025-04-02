@@ -7,7 +7,7 @@ const routes = [
   },
   {
     path: '/id',
-    component: () => import('@/views/Id.vue')
+    component: () => import('@/views/id/index.vue')
   },
   {
     path: '/about',
