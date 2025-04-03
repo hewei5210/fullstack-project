@@ -1,4 +1,5 @@
 const fs = require("fs");
+const path = require('path');
 const Papa = require("papaparse");
 
 const bingFilePath = "./data/bing.csv";
@@ -296,7 +297,33 @@ function getList() {
 
 async function importFile() {}
 
-async function exportFile() {}
+async function exportFile(langType) {
+  let jsonData = {};
+
+  langType = langType || "empty";
+
+  if (langType === "zh-CN" || langType === "zh-HK" || langType === "en-US") {
+    globalBingList.forEach((bing) => {
+      jsonData[bing.id] = bing.target[langType];
+    });
+  }
+
+  const fileName = `${langType}.json`;
+  const filePath = path.join(__dirname, "../exports", fileName);
+  const jsonContent = JSON.stringify(jsonData, null, 2);
+
+  if (!fs.existsSync(path.dirname(filePath))) {
+    fs.mkdirSync(path.dirname(filePath), { recursive: true });
+  }
+
+  fs.writeFileSync(filePath, jsonContent);
+
+  return Promise.resolve({
+    filePath,
+    fileName,
+    done: () => fs.unlinkSync(filePath),
+  });
+}
 
 module.exports = {
   init,

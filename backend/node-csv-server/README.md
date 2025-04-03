@@ -28,7 +28,10 @@ curl -X PUT http://localhost:3000/api/updateBing \
 -d '{"id": "", "source": "请输入", "target": {"en-US": "please input"}}'
 
 # 删除词条
-curl -X DELETE http://localhost:3000/api/del \
+curl -X DELETE http://localhost:3000/api/delBing \
 -H "Content-Type: application/json" \
 -d '{"id": ""}'
+
+# 导出 json（zh-CN / zh-HK / en-US）
+curl -O http://localhost:3000/api/exportBing?lang={langTag}
 ```

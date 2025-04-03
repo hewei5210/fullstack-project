@@ -1,8 +1,10 @@
 const bingServes  = require("./bing.js");
 
+// key 就是对外暴露的接口服务名，若此处不配置，则接口访问 404 返回
 const interfaceMap = {
   getBingList: bingServes.getGlobalBingList,
   addBing: bingServes.addBing,
+  exportBing: bingServes.exportBing,
 };
 
 module.exports = function serve(req, res) {
