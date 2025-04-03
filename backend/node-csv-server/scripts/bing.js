@@ -3,6 +3,7 @@ const Papa = require("papaparse");
 
 const bingFilePath = "./data/bing.csv";
 const idPrefix = "ccfe-";
+const globalID_limit = "3000";
 
 let globalBingList = []; // 当前已配置的词条集合
 let globalIDList = []; // 可用的 id 集合
@@ -86,7 +87,10 @@ function loadExtraIDList() {
 
   let previousID = 0;
 
-  globalBingList.forEach((item, index) => {
+  for (let i = 0; i <= globalBingList.length - 1; i++) {
+    if (globalIDList.length > globalID_limit) break;
+
+    let item = globalBingList[i];
     let idInt = parseInt(item.id.replace(idPrefix, ""));
 
     if (previousID + 1 === idInt) {
@@ -97,14 +101,15 @@ function loadExtraIDList() {
         .map((v, i) => getNewID(v + i));
 
       globalIDList = globalIDList.concat(distanceIDs);
-
       previousID = idInt;
-    } else if (index === globalBingList.length - 1) {
-      return;
+    } else if (i === globalBingList.length - 1) {
+      continue;
     } else {
-      throw "获取空闲 id 集合异常：前置排序可能异常";
+      throw `获取空闲 id 集合异常：【id可能重复、可能存在空白行、前置排序异常】：Previous ${previousID}, Current ${idInt}, Next ${
+        globalBingList[i + 1].id
+      }`;
     }
-  });
+  }
 
   return globalIDList;
 }
