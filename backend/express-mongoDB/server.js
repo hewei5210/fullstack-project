@@ -5,8 +5,8 @@ const app = express();
 app.use(express.json());  // 解析JSON请求体[4](@ref)
 
 // 示例路由
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'active', timestamp: new Date() });
+app.get('/', (req, res) => {
+  res.send('Hello, World!')
 });
 
 // 启动服务
