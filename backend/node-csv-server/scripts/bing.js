@@ -31,15 +31,18 @@ function readCSV(filePath) {
   });
 }
 
+// 根据读取的文件进行初始化。务必确保此方法仅在服务重启/启动之后被调用一次
 async function loadBingList() {
   const filePath = bingFilePath;
 
   try {
     const collection = await readCSV(filePath);
-    let bingList = [];
+    let bingMap = {};
+    let idList = [];
 
-    collection.forEach((item, index) => {
-      bingList.push({
+    collection.forEach((item) => {
+      idList.push(item.id);
+      bingMap[item.id] = {
         id: item.id,
         source: item.source,
         target: {
@@ -48,10 +51,14 @@ async function loadBingList() {
           "en-US": item["target(en-US)"],
         },
         status: "ready", // 集合项初始状态
-      });
+      };
     });
 
-    return (globalBingList = quickSort(bingList, compareById));
+    loadExtraIDList(idList);
+
+    return (globalBingList = quickSort(idList, compareById).map(
+      (id) => bingMap[id]
+    ));
   } catch (error) {
     console.error("读取或解析 CSV 文件时出错:", error);
   }
@@ -78,20 +85,20 @@ function quickSort(arr, compareFn) {
 
 // 比较函数：按 id 字段排序（字符串比较）
 function compareById(a, b) {
-  return a.id.localeCompare(b.id);
+  return a.localeCompare(b);
 }
 
 // 根据入参 bingList 计算出空闲的 id 队列
-function loadExtraIDList() {
-  if (globalBingList.length === 0) return [];
+function loadExtraIDList(currentIDList) {
+  if (currentIDList.length === 0) return [];
 
   let previousID = 0;
 
-  for (let i = 0; i <= globalBingList.length - 1; i++) {
+  for (let i = 0; i <= currentIDList.length - 1; i++) {
     if (globalIDList.length > globalID_limit) break;
 
-    let item = globalBingList[i];
-    let idInt = parseInt(item.id.replace(idPrefix, ""));
+    let item = currentIDList[i];
+    let idInt = parseInt(item.replace(idPrefix, ""));
 
     if (previousID + 1 === idInt) {
       previousID = idInt;
@@ -102,11 +109,11 @@ function loadExtraIDList() {
 
       globalIDList = globalIDList.concat(distanceIDs);
       previousID = idInt;
-    } else if (i === globalBingList.length - 1) {
+    } else if (i === currentIDList.length - 1) {
       continue;
     } else {
       throw `获取空闲 id 集合异常：【id可能重复、可能存在空白行、前置排序异常】：Previous ${previousID}, Current ${idInt}, Next ${
-        globalBingList[i + 1].id
+        currentIDList[i + 1]
       }`;
     }
   }
@@ -159,10 +166,6 @@ async function init() {
   await loadBingList();
 
   console.log("=== Global bing list was ready! ===");
-
-  loadExtraIDList();
-
-  console.log("=== Global extra id was ready! ===");
 }
 
 // 提交不同类型修改，使用数据副本进行处理，若成功写文件再同步到内存。
