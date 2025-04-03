@@ -41,7 +41,7 @@ const teamMembers = ref([
       <div class="contact-info">
         <p>📧 Email: contact@example.com</p>
         <p>📱 电话: 400-123-4567</p>
-        <p>📍 地址: 上海市浦东新区科技园</p>
+        <p>📍 地址: 虎丘区昆仑山路58号</p>
       </div>
     </section>
   </div>
