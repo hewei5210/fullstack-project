@@ -9,8 +9,8 @@
       >新增翻译项</el-button
     >
     <!-- 列表 -->
-    <el-table :data="tableData" stripe style="width: 100%">
-      <el-table-column label="翻译项ID" style="width: 200px;">
+    <el-table :data="displayData" stripe style="width: 100%">
+      <el-table-column label="翻译项ID" width="150">
         <template #default="scope">
           <div style="display: flex; align-items: center">
             <span style="margin-left: 10px">{{ scope.row.id }}</span>
@@ -22,7 +22,7 @@
           <el-tag>{{ scope.row.target[`zh-CN`] }}</el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="操作">
+      <el-table-column label="操作" width="120">
         <template #default="scope">
           <el-button
             size="small"
@@ -36,14 +36,14 @@
     </el-table>
     <!-- 分页 -->
     <el-pagination
-      v-model:current-page="currentPage4"
-      v-model:page-size="pageSize4"
-      :page-sizes="[100, 200, 300, 400]"
+      v-model:current-page="currentPage"
+      v-model:page-size="pageSize"
+      :page-sizes="[10, 20, 50, 100]"
       :size="size"
       :disabled="disabled"
       :background="background"
       layout="total, sizes, prev, pager, next, jumper"
-      :total="400"
+      :total="total"
       @size-change="handleSizeChange"
       @current-change="handleCurrentChange"
       style="float: right; margin: 15px 0"
@@ -53,45 +53,56 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, onMounted } from "vue";
+import { ref, onMounted, computed } from "vue";
 import AddId from "@/views/id/components/addId.vue";
 import { Plus } from "@element-plus/icons-vue";
 import axios from "axios";
 
 // 分页
 import type { ComponentSize } from "element-plus";
-const currentPage4 = ref(4);
-const pageSize4 = ref(100);
+const currentPage = ref(1);
+const pageSize = ref(10);
+const total = ref(0);
 const size = ref<ComponentSize>("default");
 const background = ref(false);
 const disabled = ref(false);
+
+// 显示数据的计算属性
+const displayData = computed(() => {
+  const start = (currentPage.value - 1) * pageSize.value;
+  const end = start + pageSize.value;
+  return tableData.value.slice(start, end);
+});
 const handleSizeChange = (val: number) => {
-  console.log(`${val} items per page`);
+  pageSize.value = val;
+  currentPage.value = 1; // 切换每页条数时重置到第一页
 };
 const handleCurrentChange = (val: number) => {
-  console.log(`current page: ${val}`);
+  currentPage.value = val;
 };
 
 const dialogVisible = ref(false);
 interface User {
   id: string;
-  target: string[];
+  target: {
+    [key: string]: string;
+  };
   status: string;
 }
 
-let tableData: User[] = [];
+let tableData = ref<User[]>([]); // 默认值[];
 const getData = () => {
-  axios.get("http://localhost:3000/api/getBingList",{
-    headers: {
-      "Content-Type": "application/json",
-    },
-  }).then((res) => {
-    console.log(res);
-    tableData  =  res.data.data;
-    console.log(tableData);
-  });
+  axios
+    .get("http://localhost:3000/api/getBingList", {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    })
+    .then((res) => {
+      tableData.value = res.data.data;
+      total.value = res.data.data.length;
+    });
 };
-
 
 const showDialog = () => {
   dialogVisible.value = true;
