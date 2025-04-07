@@ -53,9 +53,10 @@
 </template>
 
 <script lang="ts" setup>
-import { ref } from "vue";
+import { ref, onMounted } from "vue";
 import AddId from "@/views/id/components/addId.vue";
 import { Plus } from "@element-plus/icons-vue";
+import axios from "axios";
 
 // 分页
 import type { ComponentSize } from "element-plus";
@@ -76,6 +77,16 @@ interface User {
   id: string;
   item: string;
 }
+const getData = () => {
+  axios.get("http://localhost:3000/api/getBingList",{
+    headers: {
+      "Content-Type": "application/json",
+    },
+  }).then((res) => {
+    console.log(res);
+  });
+};
+
 const tableData: User[] = [
   {
     id: "2016-05-03",
@@ -101,5 +112,9 @@ const showDialog = () => {
 const handleDelete = (index: number, row: User) => {
   console.log(index, row);
 };
+
+onMounted(() => {
+  getData(); // 页面加载时自动触发
+});
 </script>
 <style scoped></style>
