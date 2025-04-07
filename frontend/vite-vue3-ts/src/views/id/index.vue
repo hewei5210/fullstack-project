@@ -10,7 +10,7 @@
     >
     <!-- 列表 -->
     <el-table :data="tableData" stripe style="width: 100%">
-      <el-table-column label="翻译项ID">
+      <el-table-column label="翻译项ID" style="width: 200px;">
         <template #default="scope">
           <div style="display: flex; align-items: center">
             <span style="margin-left: 10px">{{ scope.row.id }}</span>
@@ -19,7 +19,7 @@
       </el-table-column>
       <el-table-column label="翻译项">
         <template #default="scope">
-          <el-tag>{{ scope.row.item }}</el-tag>
+          <el-tag>{{ scope.row.target[`zh-CN`] }}</el-tag>
         </template>
       </el-table-column>
       <el-table-column label="操作">
@@ -75,8 +75,11 @@ const handleCurrentChange = (val: number) => {
 const dialogVisible = ref(false);
 interface User {
   id: string;
-  item: string;
+  target: string[];
+  status: string;
 }
+
+let tableData: User[] = [];
 const getData = () => {
   axios.get("http://localhost:3000/api/getBingList",{
     headers: {
@@ -84,27 +87,12 @@ const getData = () => {
     },
   }).then((res) => {
     console.log(res);
+    tableData  =  res.data.data;
+    console.log(tableData);
   });
 };
 
-const tableData: User[] = [
-  {
-    id: "2016-05-03",
-    item: "Tom",
-  },
-  {
-    id: "2016-05-02",
-    item: "Tom",
-  },
-  {
-    id: "2016-05-04",
-    item: "Tom",
-  },
-  {
-    id: "2016-05-01",
-    item: "Tom",
-  },
-];
+
 const showDialog = () => {
   dialogVisible.value = true;
 };
