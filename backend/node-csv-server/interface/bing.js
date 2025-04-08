@@ -46,7 +46,6 @@ async function addBing(res, reqData) {
   }
 }
 async function delBing(res, reqData) {
-  console.log('reqData',reqData)
   if (!reqData.body) {
     return res.status(400).json({
       status: "400",
