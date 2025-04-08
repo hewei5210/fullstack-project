@@ -4,6 +4,7 @@ const bingServes  = require("./bing.js");
 const interfaceMap = {
   getBingList: bingServes.getGlobalBingList,
   addBing: bingServes.addBing,
+  delBing: bingServes.delBing,
   exportBing: bingServes.exportBing,
   applyId: bingServes.applyId,
 };

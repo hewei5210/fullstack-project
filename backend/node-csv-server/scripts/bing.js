@@ -272,8 +272,9 @@ async function add(bing) {
 }
 
 async function update(bing) {
+  bing = Object.assign({}, bing.body);
   if (!bing.id || typeof bing.id !== "string" || !bing.id.startsWith("ccfe-"))
-    return Promise.reject(`新增：缺少合法 id:${bing.id}`);
+    return Promise.reject(`删除：缺少合法 id:${bing.id}`);
 
   return commit("update", {
     id: bing.id,
@@ -286,7 +287,8 @@ async function update(bing) {
   });
 }
 
-async function del() {
+async function del(bing) {
+  bing = Object.assign({}, bing.body);
   if (!bing.id || typeof bing.id !== "string" || !bing.id.startsWith("ccfe-"))
     return Promise.reject(`新增：缺少合法 id:${bing.id}`);
 
@@ -333,6 +335,7 @@ module.exports = {
   init,
   add,
   update,
+  del,
   getList,
   importFile,
   exportFile,

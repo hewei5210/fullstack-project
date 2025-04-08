@@ -27,7 +27,7 @@
           <el-button
             size="small"
             type="danger"
-            @click="handleDelete(scope.$index, scope.row)"
+            @click="showDeleteConfirm(scope.row)"
           >
             删除
           </el-button>
@@ -48,6 +48,25 @@
       @current-change="handleCurrentChange"
       style="float: right; margin: 15px 0"
     />
+    <!-- 删除确认弹窗 -->
+    <el-dialog
+      v-model="deleteDialogVisible"
+      title="删除确认"
+      width="25%"
+      :close-on-click-modal="false"
+    >
+      <span>确定要删除 {{ currentDeleteItem?.id }} 吗？</span>
+      <template #footer>
+        <el-button @click="deleteDialogVisible = false">取消</el-button>
+        <el-button
+          type="danger"
+          :loading="deleteLoading"
+          @click="confirmDelete"
+        >
+          确认
+        </el-button>
+      </template>
+    </el-dialog>
     <AddId v-model="dialogVisible" @submit="handleSubmitSuccess"/>
   </div>
 </template>
@@ -83,7 +102,7 @@ const handleCurrentChange = (val: number) => {
 };
 
 const dialogVisible = ref(false);
-interface User {
+interface Translation {
   id: string;
   target: {
     [key: string]: string;
@@ -91,7 +110,7 @@ interface User {
   status: string;
 }
 
-let tableData = ref<User[]>([]); // 默认值[];
+let tableData = ref<Translation[]>([]); // 默认值[];
 const getData = () => {
   axios
     .get("http://localhost:3000/api/getBingList", {
@@ -109,8 +128,53 @@ const showDialog = () => {
   dialogVisible.value = true;
 };
 
-const handleDelete = (index: number, row: User) => {
-  console.log(index, row);
+// 新增删除相关状态
+const deleteDialogVisible = ref(false);
+const deleteLoading = ref(false);
+const currentDeleteItem = ref<Translation | null>(null);
+
+// 修改删除处理逻辑
+const showDeleteConfirm = (row: Translation) => {
+  currentDeleteItem.value = row;
+  deleteDialogVisible.value = true;
+};
+
+const confirmDelete = async () => {
+  if (!currentDeleteItem.value) return;
+
+  try {
+    deleteLoading.value = true;
+    
+    // 调用删除接口
+    await axios.delete("http://localhost:3000/api/delBing", {
+      data: { id: currentDeleteItem.value.id },
+      headers: { "Content-Type": "application/json" }
+    });
+
+    // 更新本地数据（两种方案任选其一）
+    // 方案1：直接过滤
+    tableData.value = tableData.value.filter(
+      item => item.id !== currentDeleteItem.value?.id
+    );
+    total.value -= 1;
+
+    // 方案2：重新加载数据
+    // await getData();
+
+    ElMessage.success("删除成功");
+    deleteDialogVisible.value = false;
+
+    // 分页校正
+    if (displayData.value.length === 0 && currentPage.value > 1) {
+      currentPage.value -= 1;
+    }
+  } catch (error) {
+    ElMessage.error("删除失败");
+    console.error("删除失败:", error);
+  } finally {
+    deleteLoading.value = false;
+    currentDeleteItem.value = null;
+  }
 };
 
 // 在父组件脚本中添加处理函数
