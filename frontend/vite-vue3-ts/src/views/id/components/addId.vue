@@ -33,25 +33,33 @@
           </el-button>
         </div>
       </el-form-item>
-      <el-form-item label="翻译项-中文" prop="item">
+      <el-form-item label="翻译项" prop="source">
         <el-input
-          v-model="formData.item"
+          v-model="formData.source"
+          placeholder="请输入翻译项"
+          style="flex: 1; margin-right: 70px"
+          clearable
+        />
+      </el-form-item>
+      <el-form-item label="翻译项-中文" prop="target['zh-CN']">
+        <el-input
+          v-model="formData.target['zh-CN']"
           placeholder="请输入翻译项-中文"
           style="flex: 1; margin-right: 70px"
           clearable
         />
       </el-form-item>
-      <el-form-item label="翻译项-英文" prop="item-en">
+      <el-form-item label="翻译项-英文" prop="target['en-US']">
         <el-input
-          v-model="formData.item"
+          v-model="formData.target['en-US']"
           placeholder="请输入翻译项-英文"
           clearable
           style="flex: 1; margin-right: 70px"
         />
       </el-form-item>
-      <el-form-item label="翻译项-繁体" prop="item-tw">
+      <el-form-item label="翻译项-繁体" prop="target['zh-HK']">
         <el-input
-          v-model="formData.item"
+          v-model="formData.target['zh-HK']"
           placeholder="请输入翻译项-繁体"
           clearable
           style="flex: 1; margin-right: 70px"
@@ -68,29 +76,44 @@
 
 <script setup lang="ts">
 import { ref, reactive, watch } from "vue";
+import { ElMessage } from "element-plus"; // Import ElMessage as a value
 import type { FormInstance, FormRules } from "element-plus";
 import { RefreshRight } from "@element-plus/icons-vue";
 import axios from "axios";
 
+interface TranslationItem {
+  id: string;
+  source: string;
+  target: {
+    "zh-CN": string;
+    "en-US": string;
+    "zh-HK": string;
+  };
+}
+
 const props = defineProps<{
   modelValue: boolean;
-  initialData?: { id: string; item: string };
+  initialData?: TranslationItem;
 }>();
 
 const emit = defineEmits(["update:modelValue", "submit"]);
 
 const formRef = ref<FormInstance>();
 const visible = ref(props.modelValue);
-const formData = reactive({
+// 初始化表单数据
+const formData = reactive<TranslationItem>({
   id: props.initialData?.id || "",
-  item: props.initialData?.item || "",
+  source: props.initialData?.source || "",
+  target: {
+    "zh-CN": props.initialData?.target["zh-CN"] || "",
+    "en-US": props.initialData?.target["en-US"] || "",
+    "zh-HK": props.initialData?.target["zh-HK"] || "",
+  },
 });
 
 const rules = reactive<FormRules>({
-  id: [
-    { required: true, message: "ID不能为空", trigger: "blur" },
-  ],
-  item: [{ required: true, message: "翻译内容不能为空", trigger: "blur" }],
+  id: [{ required: true, message: "ID不能为空", trigger: "blur" }],
+  source: [{ required: true, message: "中文翻译不能为空", trigger: "blur" }],
 });
 
 // 同步 v-model 状态
@@ -103,8 +126,24 @@ watch(visible, (val) => emit("update:modelValue", val));
 const handleSubmit = async () => {
   try {
     await formRef.value?.validate();
-    emit("submit", { ...formData });
-    visible.value = false;
+    console.log("formData", formData);
+    // 发送POST请求
+    axios
+      .post("http://localhost:3000/api/addBing", {
+        id: formData.id,
+        source: formData.source,
+        target: formData.target,
+      })
+      .then(
+        () => {
+          ElMessage.success("添加成功");
+          emit("submit", formData);
+          visible.value = false;
+        },
+        () => {
+          ElMessage.error("添加失败");
+        }
+      );
   } catch (error) {
     console.log("表单验证失败:", error);
   }
@@ -122,7 +161,7 @@ const generateId = () => {
       },
     })
     .then((res) => {
-      console.log('res',res.data)
+      console.log("res", res.data);
       formData.id = res.data.data;
     });
 };

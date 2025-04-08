@@ -249,6 +249,7 @@ function commit(type, bingData) {
 }
 
 async function add(bing) {
+  bing = Object.assign({}, bing.body);
   if (!bing.id || typeof bing.id !== "string" || !bing.id.startsWith("ccfe-"))
     return Promise.reject(`新增：缺少合法 id:${bing.id}`);
 
@@ -263,9 +264,9 @@ async function add(bing) {
     id: bing.id,
     source: bing.source || "",
     target: {
-      "zh-CN": bing["zh-CN"],
-      "zh-HK": bing["zh-HK"],
-      "en-US": bing["en-US"],
+      "zh-CN": bing.target["zh-CN"],
+      "zh-HK": bing.target["zh-HK"],
+      "en-US": bing.target["en-US"],
     },
   });
 }

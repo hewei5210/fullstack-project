@@ -48,7 +48,7 @@
       @current-change="handleCurrentChange"
       style="float: right; margin: 15px 0"
     />
-    <AddId v-model="dialogVisible" />
+    <AddId v-model="dialogVisible" @submit="handleSubmitSuccess"/>
   </div>
 </template>
 
@@ -56,6 +56,7 @@
 import { ref, onMounted, computed } from "vue";
 import AddId from "@/views/id/components/addId.vue";
 import { Plus } from "@element-plus/icons-vue";
+import { ElMessage } from "element-plus"; // Import ElMessage as a value
 import axios from "axios";
 
 // 分页
@@ -110,6 +111,12 @@ const showDialog = () => {
 
 const handleDelete = (index: number, row: User) => {
   console.log(index, row);
+};
+
+// 在父组件脚本中添加处理函数
+const handleSubmitSuccess = () => {
+  getData(); // 调用现有的数据获取方法
+  ElMessage.success("数据添加成功，列表已刷新");
 };
 
 onMounted(() => {
