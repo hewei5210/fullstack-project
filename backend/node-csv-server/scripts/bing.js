@@ -1,5 +1,5 @@
 const fs = require("fs");
-const path = require('path');
+const path = require("path");
 const Papa = require("papaparse");
 
 const bingFilePath = "./data/bing.csv";
@@ -61,10 +61,13 @@ async function loadBingList() {
     //   (id) => bingMap[id]
     // ));
 
-    return (globalBingList = idList.slice().sort(compareById).map( // 注意要复制数组
-      (id) => bingMap[id]
-    ));
-
+    return (globalBingList = idList
+      .slice()
+      .sort(compareById)
+      .map(
+        // 注意要复制数组
+        (id) => bingMap[id]
+      ));
   } catch (error) {
     console.error("读取或解析 CSV 文件时出错:", error);
   }
@@ -332,4 +335,5 @@ module.exports = {
   getList,
   importFile,
   exportFile,
+  applyNewID,
 };

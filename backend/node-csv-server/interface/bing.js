@@ -10,6 +10,16 @@ function getGlobalBingList(res) {
   });
 }
 
+function applyId(res) {
+  let data = bingServer.applyNewID();
+
+  res.status(200).json({
+    status: 200,
+    message: "success",
+    data: data,
+  });
+}
+
 async function addBing(res, reqData) {
   if (!reqData.body) {
     return res.status(400).json({
@@ -65,4 +75,5 @@ module.exports = {
   getGlobalBingList,
   addBing,
   exportBing,
+  applyId,
 };

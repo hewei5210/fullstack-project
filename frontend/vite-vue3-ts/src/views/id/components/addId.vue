@@ -70,6 +70,7 @@
 import { ref, reactive, watch } from "vue";
 import type { FormInstance, FormRules } from "element-plus";
 import { RefreshRight } from "@element-plus/icons-vue";
+import axios from "axios";
 
 const props = defineProps<{
   modelValue: boolean;
@@ -88,7 +89,6 @@ const formData = reactive({
 const rules = reactive<FormRules>({
   id: [
     { required: true, message: "ID不能为空", trigger: "blur" },
-    { pattern: /^\d{4}-\d{2}-\d{2}$/, message: "ID格式：YYYY-MM-DD" },
   ],
   item: [{ required: true, message: "翻译内容不能为空", trigger: "blur" }],
 });
@@ -114,7 +114,18 @@ const handleClose = () => {
   formRef.value?.resetFields();
 };
 
-const generateId = () => {};
+const generateId = () => {
+  axios
+    .get("http://localhost:3000/api/applyId", {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    })
+    .then((res) => {
+      console.log('res',res.data)
+      formData.id = res.data.data;
+    });
+};
 </script>
 <style scoped>
 .inline-container {

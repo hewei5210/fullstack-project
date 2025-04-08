@@ -5,6 +5,7 @@ const interfaceMap = {
   getBingList: bingServes.getGlobalBingList,
   addBing: bingServes.addBing,
   exportBing: bingServes.exportBing,
+  applyId: bingServes.applyId,
 };
 
 module.exports = function serve(req, res) {
