@@ -17,13 +17,31 @@
           </div>
         </template>
       </el-table-column>
-      <el-table-column label="翻译项">
+      <el-table-column label="翻译项" show-overflow-tooltip>
         <template #default="scope">
-          <el-tag>{{ scope.row.target[`zh-CN`] }}</el-tag>
+          {{ scope.row.target[`zh-CN`] }}
         </template>
       </el-table-column>
-      <el-table-column label="操作" width="120">
+      <el-table-column label="翻译项-英文" show-overflow-tooltip>
         <template #default="scope">
+          {{ scope.row.target[`en-US`] }}
+        </template>
+      </el-table-column>
+      <el-table-column label="翻译项-繁体" show-overflow-tooltip>
+        <template #default="scope">
+          {{ scope.row.target[`zh-HK`] }}
+        </template>
+      </el-table-column>
+      <el-table-column label="操作" width="180">
+        <template #default="scope">
+          <el-button
+            size="small"
+            type="warning"
+            @click="showEditDialog(scope.row)"
+            style="margin-right: 8px"
+          >
+            编辑
+          </el-button>
           <el-button
             size="small"
             type="danger"
@@ -67,13 +85,19 @@
         </el-button>
       </template>
     </el-dialog>
-    <AddId v-model="dialogVisible" @submit="handleSubmitSuccess"/>
+    <AddId v-model="dialogVisible" @submit="handleSubmitSuccess" />
+    <EditId
+      v-model="editDialogVisible"
+      :current-edit-item="currentEditItem"
+      @submit="handleSubmitSuccess"
+    />
   </div>
 </template>
 
 <script lang="ts" setup>
 import { ref, onMounted, computed } from "vue";
-import AddId from "@/views/id/components/addId.vue";
+import AddId from "./components/addId.vue";
+import EditId from "./components/editId.vue";
 import { Plus } from "@element-plus/icons-vue";
 import { ElMessage } from "element-plus"; // Import ElMessage as a value
 import axios from "axios";
@@ -101,7 +125,6 @@ const handleCurrentChange = (val: number) => {
   currentPage.value = val;
 };
 
-const dialogVisible = ref(false);
 interface Translation {
   id: string;
   target: {
@@ -110,6 +133,7 @@ interface Translation {
   status: string;
 }
 
+// 获取列表数据
 let tableData = ref<Translation[]>([]); // 默认值[];
 const getData = () => {
   axios
@@ -119,51 +143,58 @@ const getData = () => {
       },
     })
     .then((res) => {
+      console.log("res", res.data.data);
       tableData.value = res.data.data;
       total.value = res.data.data.length;
     });
 };
 
+// 控制新增翻译项弹窗
+const dialogVisible = ref(false);
 const showDialog = () => {
   dialogVisible.value = true;
 };
 
-// 新增删除相关状态
+// 编辑相关状态
+const editDialogVisible = ref(false); // 新增编辑相关状态
+const currentEditItem = ref<Translation>({
+  id: "",
+  target: { "zh-CN": "", "en-US": "", "zh-HK": "" },
+  status: "",
+});
+const showEditDialog = (row: Translation) => {
+  currentEditItem.value = JSON.parse(JSON.stringify(row)); // 深拷贝当前行数据
+  editDialogVisible.value = true;
+};
+
+// 删除相关状态
 const deleteDialogVisible = ref(false);
 const deleteLoading = ref(false);
 const currentDeleteItem = ref<Translation | null>(null);
-
 // 修改删除处理逻辑
 const showDeleteConfirm = (row: Translation) => {
   currentDeleteItem.value = row;
   deleteDialogVisible.value = true;
 };
-
 const confirmDelete = async () => {
   if (!currentDeleteItem.value) return;
-
   try {
     deleteLoading.value = true;
-    
     // 调用删除接口
     await axios.delete("http://localhost:3000/api/delBing", {
       data: { id: currentDeleteItem.value.id },
-      headers: { "Content-Type": "application/json" }
+      headers: { "Content-Type": "application/json" },
     });
-
     // 更新本地数据（两种方案任选其一）
     // 方案1：直接过滤
     tableData.value = tableData.value.filter(
-      item => item.id !== currentDeleteItem.value?.id
+      (item) => item.id !== currentDeleteItem.value?.id
     );
     total.value -= 1;
-
     // 方案2：重新加载数据
     // await getData();
-
     ElMessage.success("删除成功");
     deleteDialogVisible.value = false;
-
     // 分页校正
     if (displayData.value.length === 0 && currentPage.value > 1) {
       currentPage.value -= 1;

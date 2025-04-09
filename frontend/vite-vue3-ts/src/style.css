@@ -63,6 +63,11 @@ button:focus-visible {
   min-height: 100vh;
 }
 
+.el-popper {
+  max-width: 20% !important;  /* 按百分比自适应宽度 */
+  word-break: break-word;      /* 长文本自动换行 */
+}
+
 @media (prefers-color-scheme: light) {
   :root {
     color: #213547;
