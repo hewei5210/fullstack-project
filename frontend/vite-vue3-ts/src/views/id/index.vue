@@ -9,7 +9,7 @@
       >新增翻译项</el-button
     >
     <!-- 列表 -->
-    <el-table :data="displayData" stripe style="width: 100%">
+    <el-table :data="tableData" stripe style="width: 100%">
       <el-table-column label="翻译项ID" width="150">
         <template #default="scope">
           <div style="display: flex; align-items: center">
@@ -95,7 +95,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, onMounted, computed } from "vue";
+import { ref, onMounted } from "vue";
 import AddId from "./components/addId.vue";
 import EditId from "./components/editId.vue";
 import { Plus } from "@element-plus/icons-vue";
@@ -111,18 +111,16 @@ const size = ref<ComponentSize>("default");
 const background = ref(false);
 const disabled = ref(false);
 
-// 显示数据的计算属性
-const displayData = computed(() => {
-  const start = (currentPage.value - 1) * pageSize.value;
-  const end = start + pageSize.value;
-  return tableData.value.slice(start, end);
-});
+
 const handleSizeChange = (val: number) => {
+  console.log("size", val);
   pageSize.value = val;
-  currentPage.value = 1; // 切换每页条数时重置到第一页
+  getData();
 };
 const handleCurrentChange = (val: number) => {
+  console.log("page", val);
   currentPage.value = val;
+  getData();
 };
 
 interface Translation {
@@ -136,16 +134,17 @@ interface Translation {
 // 获取列表数据
 let tableData = ref<Translation[]>([]); // 默认值[];
 const getData = () => {
+  console.log("currentPage", currentPage.value,"pageSize",pageSize.value);
   axios
     .get("http://localhost:3000/api/getBingList", {
       headers: {
         "Content-Type": "application/json",
       },
+      params: { page: currentPage.value, pageSize: pageSize.value },
     })
     .then((res) => {
-      console.log("res", res.data.data);
-      tableData.value = res.data.data;
-      total.value = res.data.data.length;
+      tableData.value = res.data.data.data;
+      total.value = res.data.data.total;
     });
 };
 
@@ -185,20 +184,11 @@ const confirmDelete = async () => {
       data: { id: currentDeleteItem.value.id },
       headers: { "Content-Type": "application/json" },
     });
-    // 更新本地数据（两种方案任选其一）
-    // 方案1：直接过滤
-    tableData.value = tableData.value.filter(
-      (item) => item.id !== currentDeleteItem.value?.id
-    );
-    total.value -= 1;
-    // 方案2：重新加载数据
-    // await getData();
+    
+    getData();
     ElMessage.success("删除成功");
     deleteDialogVisible.value = false;
-    // 分页校正
-    if (displayData.value.length === 0 && currentPage.value > 1) {
-      currentPage.value -= 1;
-    }
+    
   } catch (error) {
     ElMessage.error("删除失败");
     console.error("删除失败:", error);

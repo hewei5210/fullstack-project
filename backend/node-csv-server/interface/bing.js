@@ -1,7 +1,8 @@
 const bingServer = require("../scripts/bing.js");
 
-function getGlobalBingList(res) {
-  let bingList = bingServer.getList();
+function getGlobalBingList(res, reqData) {
+  console.log('reqData',reqData)
+  let bingList = bingServer.getList(reqData);
 
   res.status(200).json({
     status: 200,

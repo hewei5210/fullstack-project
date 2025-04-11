@@ -20,7 +20,7 @@
           </el-menu-item>
           <el-menu-item index="/id">
             <el-icon><house /></el-icon>
-            <span>获取ID</span>
+            <span>翻译项管理</span>
           </el-menu-item>
           <el-menu-item index="/about">
             <el-icon><info-filled /></el-icon>

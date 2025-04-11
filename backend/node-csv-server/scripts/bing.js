@@ -259,19 +259,19 @@ function commit(type, bingData) {
   if (type === "add") {
     dataCopy.push(bingData); // ✅ 直接操作副本
   } else if (type === "update") {
-    const index = dataCopy.findIndex(b => b.id === bingData.id);
+    const index = dataCopy.findIndex((b) => b.id === bingData.id);
     if (index > -1) dataCopy[index] = bingData;
   } else if (type === "del") {
-    dataCopy = dataCopy.filter(b => b.id !== bingData.id);
+    dataCopy = dataCopy.filter((b) => b.id !== bingData.id);
   }
 
   // 生成 CSV 数据
-  const csvData = dataCopy.map(b => ({
+  const csvData = dataCopy.map((b) => ({
     id: b.id,
     source: b.source,
     "target(zh-CN)": b.target["zh-CN"],
     "target(zh-HK)": b.target["zh-HK"],
-    "target(en-US)": b.target["en-US"]
+    "target(en-US)": b.target["en-US"],
   }));
 
   // 写入文件
@@ -337,8 +337,13 @@ async function del(bing) {
   });
 }
 
-function getList() {
-  return globalBingList.slice();
+function getList(bing) {
+  // 增加分页功能
+  const total = globalBingList.length;
+  const start = (bing.query.page - 1) * bing.query.pageSize;
+  const end = Number(start) + Number(bing.query.pageSize);
+  const data = globalBingList.slice(start, end);
+  return { data, total };
 }
 
 async function importFile() {}
