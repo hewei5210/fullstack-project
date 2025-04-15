@@ -320,9 +320,9 @@ async function update(bing) {
     id: bing.id,
     source: bing.source || "",
     target: {
-      "zh-CN": bing["zh-CN"],
-      "zh-HK": bing["zh-HK"],
-      "en-US": bing["en-US"],
+      "zh-CN": bing.target["zh-CN"],
+      "zh-HK": bing.target["zh-HK"],
+      "en-US": bing.target["en-US"],
     },
   });
 }

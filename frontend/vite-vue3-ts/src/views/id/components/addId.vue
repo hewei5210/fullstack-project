@@ -41,14 +41,14 @@
           clearable
         />
       </el-form-item>
-      <el-form-item label="翻译项-中文" prop="target['zh-CN']">
+      <!-- <el-form-item label="翻译项-中文" prop="target['zh-CN']">
         <el-input
           v-model="formData.target['zh-CN']"
           placeholder="请输入翻译项-中文"
           style="flex: 1; margin-right: 70px"
           clearable
         />
-      </el-form-item>
+      </el-form-item> -->
       <el-form-item label="翻译项-英文" prop="target['en-US']">
         <el-input
           v-model="formData.target['en-US']"
@@ -113,7 +113,7 @@ const formData = reactive<TranslationItem>({
 
 const rules = reactive<FormRules>({
   id: [{ required: true, message: "ID不能为空", trigger: "blur" }],
-  source: [{ required: true, message: "中文翻译不能为空", trigger: "blur" }],
+  source: [{ required: true, message: "翻译项不能为空", trigger: "blur" }],
 });
 
 // 同步 v-model 状态
@@ -126,7 +126,6 @@ watch(visible, (val) => emit("update:modelValue", val));
 const handleSubmit = async () => {
   try {
     await formRef.value?.validate();
-    console.log("formData", formData);
     // 发送POST请求
     axios
       .post("http://localhost:3000/api/addBing", {

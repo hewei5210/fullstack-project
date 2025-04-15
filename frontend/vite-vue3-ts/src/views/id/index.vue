@@ -113,12 +113,10 @@ const disabled = ref(false);
 
 
 const handleSizeChange = (val: number) => {
-  console.log("size", val);
   pageSize.value = val;
   getData();
 };
 const handleCurrentChange = (val: number) => {
-  console.log("page", val);
   currentPage.value = val;
   getData();
 };
@@ -134,7 +132,6 @@ interface Translation {
 // 获取列表数据
 let tableData = ref<Translation[]>([]); // 默认值[];
 const getData = () => {
-  console.log("currentPage", currentPage.value,"pageSize",pageSize.value);
   axios
     .get("http://localhost:3000/api/getBingList", {
       headers: {
@@ -162,8 +159,8 @@ const currentEditItem = ref<Translation>({
   status: "",
 });
 const showEditDialog = (row: Translation) => {
-  currentEditItem.value = JSON.parse(JSON.stringify(row)); // 深拷贝当前行数据
   editDialogVisible.value = true;
+  currentEditItem.value = JSON.parse(JSON.stringify(row)); // 深拷贝当前行数据
 };
 
 // 删除相关状态
@@ -201,7 +198,7 @@ const confirmDelete = async () => {
 // 在父组件脚本中添加处理函数
 const handleSubmitSuccess = () => {
   getData(); // 调用现有的数据获取方法
-  ElMessage.success("数据添加成功，列表已刷新");
+  ElMessage.success("列表已刷新");
 };
 
 onMounted(() => {
