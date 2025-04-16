@@ -71,29 +71,15 @@
       @current-change="handleCurrentChange"
       style="float: right; margin: 15px 0"
     />
-    <!-- 删除确认弹窗 -->
-    <el-dialog
-      v-model="deleteDialogVisible"
-      title="删除确认"
-      width="25%"
-      :close-on-click-modal="false"
-    >
-      <span>确定要删除 {{ currentDeleteItem?.id }} 吗？</span>
-      <template #footer>
-        <el-button @click="deleteDialogVisible = false">取消</el-button>
-        <el-button
-          type="danger"
-          :loading="deleteLoading"
-          @click="confirmDelete"
-        >
-          确认
-        </el-button>
-      </template>
-    </el-dialog>
     <AddId v-model="dialogVisible" @submit="handleSubmitSuccess" />
     <EditId
       v-model="editDialogVisible"
       :current-edit-item="currentEditItem"
+      @submit="handleSubmitSuccess"
+    />
+    <DeleteId
+      v-model="deleteDialogVisible"
+      :current-delete-item="currentDeleteItem"
       @submit="handleSubmitSuccess"
     />
     <ExportDialog v-model="exportDialogVisible" />
@@ -104,6 +90,7 @@
 import { ref, onMounted } from "vue";
 import AddId from "./components/addId.vue";
 import EditId from "./components/editId.vue";
+import DeleteId from "./components/deleteId.vue";
 import ExportDialog from "./components/exportDialog.vue";
 import { Plus, Download } from "@element-plus/icons-vue";
 import { ElMessage } from "element-plus"; // Import ElMessage as a value
@@ -177,34 +164,14 @@ const showEditDialog = (row: Translation) => {
 
 // 删除相关状态
 const deleteDialogVisible = ref(false);
-const deleteLoading = ref(false);
+
 const currentDeleteItem = ref<Translation | null>(null);
 // 修改删除处理逻辑
 const showDeleteConfirm = (row: Translation) => {
   currentDeleteItem.value = row;
   deleteDialogVisible.value = true;
 };
-const confirmDelete = async () => {
-  if (!currentDeleteItem.value) return;
-  try {
-    deleteLoading.value = true;
-    // 调用删除接口
-    await axios.delete("http://localhost:3000/api/delBing", {
-      data: { id: currentDeleteItem.value.id },
-      headers: { "Content-Type": "application/json" },
-    });
 
-    getData();
-    ElMessage.success("删除成功");
-    deleteDialogVisible.value = false;
-  } catch (error) {
-    ElMessage.error("删除失败");
-    console.error("删除失败:", error);
-  } finally {
-    deleteLoading.value = false;
-    currentDeleteItem.value = null;
-  }
-};
 
 // 在父组件脚本中添加处理函数
 const handleSubmitSuccess = () => {
