@@ -1,13 +1,18 @@
 <template>
   <div style="margin: 20px 20px 0 20px">
-    <!-- 新增按钮 -->
-    <el-button
-      type="primary"
-      :icon="Plus"
-      @click="showDialog"
-      style="margin-bottom: 20px"
-      >新增翻译项</el-button
-    >
+    <!-- 操作按钮组 -->
+    <div style="margin-bottom: 20px">
+      <el-button type="primary" :icon="Plus" @click="showDialog"
+        >新增翻译项</el-button
+      >
+      <el-button
+        type="success"
+        :icon="Download"
+        @click="exportDialog"
+        style="margin-left: 10px"
+        >导出数据</el-button
+      >
+    </div>
     <!-- 列表 -->
     <el-table :data="tableData" stripe style="width: 100%">
       <el-table-column label="翻译项ID" width="150">
@@ -91,6 +96,7 @@
       :current-edit-item="currentEditItem"
       @submit="handleSubmitSuccess"
     />
+    <ExportDialog v-model="exportDialogVisible" />
   </div>
 </template>
 
@@ -98,7 +104,8 @@
 import { ref, onMounted } from "vue";
 import AddId from "./components/addId.vue";
 import EditId from "./components/editId.vue";
-import { Plus } from "@element-plus/icons-vue";
+import ExportDialog from "./components/exportDialog.vue";
+import { Plus, Download } from "@element-plus/icons-vue";
 import { ElMessage } from "element-plus"; // Import ElMessage as a value
 import axios from "axios";
 
@@ -110,7 +117,6 @@ const total = ref(0);
 const size = ref<ComponentSize>("default");
 const background = ref(false);
 const disabled = ref(false);
-
 
 const handleSizeChange = (val: number) => {
   pageSize.value = val;
@@ -151,6 +157,12 @@ const showDialog = () => {
   dialogVisible.value = true;
 };
 
+// 控制导出数据弹窗
+const exportDialogVisible = ref(false);
+const exportDialog = () => {
+  exportDialogVisible.value = true;
+};
+
 // 编辑相关状态
 const editDialogVisible = ref(false); // 新增编辑相关状态
 const currentEditItem = ref<Translation>({
@@ -181,11 +193,10 @@ const confirmDelete = async () => {
       data: { id: currentDeleteItem.value.id },
       headers: { "Content-Type": "application/json" },
     });
-    
+
     getData();
     ElMessage.success("删除成功");
     deleteDialogVisible.value = false;
-    
   } catch (error) {
     ElMessage.error("删除失败");
     console.error("删除失败:", error);
