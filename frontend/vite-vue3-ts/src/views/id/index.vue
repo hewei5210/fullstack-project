@@ -6,6 +6,14 @@
         >新增翻译项</el-button
       >
       <el-button
+        type="warning"
+        :icon="Upload"
+        @click="batchDialog"
+        style="margin-left: 10px"
+      >
+        批量新增
+      </el-button>
+      <el-button
         type="success"
         :icon="Download"
         @click="exportDialog"
@@ -72,6 +80,10 @@
       style="float: right; margin: 15px 0"
     />
     <AddId v-model="dialogVisible" @submit="handleSubmitSuccess" />
+    <AddBatchId
+      v-model="batchDialogVisible"
+      @submit="handleSubmitSuccess"
+    />
     <EditId
       v-model="editDialogVisible"
       :current-edit-item="currentEditItem"
@@ -89,10 +101,11 @@
 <script lang="ts" setup>
 import { ref, onMounted } from "vue";
 import AddId from "./components/addId.vue";
+import AddBatchId from "./components/addBatchId.vue";
 import EditId from "./components/editId.vue";
 import DeleteId from "./components/deleteId.vue";
 import ExportDialog from "./components/exportDialog.vue";
-import { Plus, Download } from "@element-plus/icons-vue";
+import { Plus, Download, Upload } from "@element-plus/icons-vue";
 import { ElMessage } from "element-plus"; // Import ElMessage as a value
 import axios from "axios";
 
@@ -144,6 +157,11 @@ const showDialog = () => {
   dialogVisible.value = true;
 };
 
+const batchDialogVisible = ref(false);
+// 控制批量新增弹窗
+const batchDialog = () => {
+  batchDialogVisible.value = true;
+};
 // 控制导出数据弹窗
 const exportDialogVisible = ref(false);
 const exportDialog = () => {

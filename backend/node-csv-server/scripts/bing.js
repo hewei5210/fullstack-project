@@ -1,5 +1,6 @@
 const fs = require("fs");
 const path = require("path");
+const ExcelJS = require("exceljs");
 const Papa = require("papaparse");
 
 const bingFilePath = "./data/bing.csv";
@@ -376,6 +377,93 @@ async function exportFile(langType) {
   });
 }
 
+async function downloadTemplate() {
+  try {
+    const templatePath = path.resolve(
+      __dirname,
+      "../data/translate_template.xlsx"
+    );
+    if (!fs.existsSync(templatePath)) {
+      const workbook = new ExcelJS.Workbook();
+      const worksheet = workbook.addWorksheet("翻译模板");
+      worksheet.columns = [
+        { header: "翻译项", key: "zh-CN", width: 30 },
+        { header: "翻译项-英文", key: "en-US", width: 30 },
+        { header: "翻译项-繁体", key: "zh-HK", width: 30 },
+      ];
+      await workbook.xlsx.writeFile(templatePath);
+    }
+    return {
+      filePath: templatePath,
+      fileName: "translation_template.xlsx",
+    };
+  } catch (e) {
+    throw new Error(`模板生成失败: ${e.message}`);
+  }
+}
+
+async function batchUpload(file) {
+  console.log('file',file)
+  console.log('batchUpload',"2222222222222222222")
+  try {
+    const workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.readFile(file.path);
+    
+    const worksheet = workbook.getWorksheet(1);
+    const results = {
+      total: 0,
+      success: 0,
+      errors: []
+    };
+
+    // 逐行处理Excel数据
+    worksheet.eachRow({ includeEmpty: false }, (row, rowNumber) => {
+      if (rowNumber === 1) return; // 跳过表头
+
+      results.total++;
+      
+      try {
+        const record = {
+          id: applyNewID(),
+          source: row.getCell(1).value,
+          target: {
+            'zh-CN': row.getCell(1).value,
+            'en-US': row.getCell(2).value,
+            'zh-HK': row.getCell(3).value
+          }
+        };
+
+        // 数据校验
+        if (!record.id || !record.source || !record.target['zh-CN']) {
+          throw new Error('必填字段缺失');
+        }
+
+        // 检查ID唯一性
+        if (globalBingList.some(item => item.id === record.id)) {
+          throw new Error('ID已存在');
+        }
+
+        // 提交数据
+        commit('add', record);
+        results.success++;
+      } catch (error) {
+        results.errors.push({
+          row: rowNumber,
+          message: error.message
+        });
+      }
+    });
+
+    return {
+      code: 200,
+      data: results,
+      message: `成功导入 ${results.success} 条，失败 ${results.errors.length} 条`
+    };
+  } catch (error) {
+    throw new Error(`文件处理失败: ${error.message}`);
+  }
+}
+
 module.exports = {
   init,
   add,
@@ -385,4 +473,6 @@ module.exports = {
   importFile,
   exportFile,
   applyNewID,
+  downloadTemplate,
+  batchUpload,
 };
