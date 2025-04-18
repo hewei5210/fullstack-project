@@ -403,17 +403,30 @@ async function downloadTemplate() {
 }
 
 async function batchUpload(file) {
-  console.log('file',file)
-  console.log('batchUpload',"2222222222222222222")
   try {
+    // 校验文件头签名（XLSX 文件头为 PK\x03\x04）
+    const xlsxSignature = file.buffer.slice(0, 4).toString("hex");
+    if (xlsxSignature !== "504b0304") {
+      throw new Error("文件格式损坏，非标准 XLSX 文件");
+    }
+
+    // 校验 MIME 类型
+    if (
+      file.mimetype !==
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    ) {
+      throw new Error("仅支持 .xlsx 文件");
+    }
+
     const workbook = new ExcelJS.Workbook();
-    await workbook.xlsx.readFile(file.path);
-    
+    await workbook.xlsx.load(file.buffer); // 替代 readFile(file.buffer)
+
     const worksheet = workbook.getWorksheet(1);
     const results = {
+      data: [],
       total: 0,
       success: 0,
-      errors: []
+      errors: [],
     };
 
     // 逐行处理Excel数据
@@ -421,35 +434,36 @@ async function batchUpload(file) {
       if (rowNumber === 1) return; // 跳过表头
 
       results.total++;
-      
+
       try {
         const record = {
           id: applyNewID(),
           source: row.getCell(1).value,
           target: {
-            'zh-CN': row.getCell(1).value,
-            'en-US': row.getCell(2).value,
-            'zh-HK': row.getCell(3).value
-          }
+            "zh-CN": row.getCell(1).value,
+            "en-US": row.getCell(2).value || "",
+            "zh-HK": row.getCell(3).value || "",
+          },
         };
 
         // 数据校验
-        if (!record.id || !record.source || !record.target['zh-CN']) {
-          throw new Error('必填字段缺失');
+        if (!record.id || !record.source || !record.target["zh-CN"]) {
+          throw new Error("必填字段缺失");
         }
 
         // 检查ID唯一性
-        if (globalBingList.some(item => item.id === record.id)) {
-          throw new Error('ID已存在');
-        }
+        // if (globalBingList.some((item) => item.id === record.id)) {
+        //   throw new Error("ID已存在");
+        // }
 
         // 提交数据
-        commit('add', record);
+        commit("add", record);
+        results.data.push(record);
         results.success++;
       } catch (error) {
         results.errors.push({
           row: rowNumber,
-          message: error.message
+          message: error.message,
         });
       }
     });
@@ -457,7 +471,7 @@ async function batchUpload(file) {
     return {
       code: 200,
       data: results,
-      message: `成功导入 ${results.success} 条，失败 ${results.errors.length} 条`
+      message: `成功导入 ${results.success} 条，失败 ${results.errors.length} 条`,
     };
   } catch (error) {
     throw new Error(`文件处理失败: ${error.message}`);

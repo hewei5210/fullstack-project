@@ -6,6 +6,9 @@ const interfaceServer = require("./interface/index.js");
 const cors = require('cors');
 
 const app = express();
+const multer = require("multer");
+// multer 是 ​​Node.js 中用于处理文件上传的中间件​​，专为 Express 框架设计。
+const upload = multer({ storage: multer.memoryStorage() });
 
 // 静态资源目录
 const staticDir = path.join(__dirname, "../frontend/dist");
@@ -28,6 +31,11 @@ app.use(express.urlencoded({ extended: true }));
 
 // web 路径转发到静态资源提供服务
 app.use("/web", express.static(staticDir));
+
+// 新增文件上传路由
+app.use('/api/batchUpload', upload.single('file'), (req, res) => {
+  interfaceServer(req, res);  // 转发到接口服务
+});
 
 // api 路径转发到接口服务
 app.use("/api", (req, res) => interfaceServer(req, res));

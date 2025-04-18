@@ -12,7 +12,7 @@
       :on-success="handleSuccess"
       :on-error="handleError"
       drag
-      action="http://localhost:3000/api/batchUpload"
+      action="http://localhost:3000/api/batchUpload/translationItem"
       multiple
     >
       <el-icon class="el-icon--upload"><upload-filled /></el-icon>

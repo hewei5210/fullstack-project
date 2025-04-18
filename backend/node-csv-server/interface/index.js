@@ -10,26 +10,24 @@ const interfaceMap = {
   applyId: bingServes.applyId,
   updateBing: bingServes.updateBing,
   downloadTemplate: bingServes.downloadTemplate,
-  batchUpload: bingServes.batchUpload,
+  translationItem: bingServes.batchUpload,
 };
 
 module.exports = function serve(req, res) {
-  console.log("index,请求req",req.params, req.query, req.body, req.file)
-  // console.log("index,请求res",res)
   let params = req.params; // 路径参数
   let query = req.query; // 路径查询参数
   let body = req.body; // 请求体参数
+  let file = req.file;
 
   let serveName = req.path.replace(/^(\/api\/|\/)/g, "");
   let serve = interfaceMap[serveName];
-  if(serveName === 'batchUpload'){
-    
-  }
+  
   if (serve) {
     serve(res, {
       params,
       query,
       body,
+      file,
     });
   } else {
     res.status(404).json({
