@@ -5,7 +5,7 @@ const Papa = require("papaparse");
 
 const bingFilePath = "./data/bing.csv";
 const idPrefix = "ccfe-";
-const globalID_limit = "3000";
+const globalID_limit = "3000"; // 一次的上传极限是3000
 
 let globalBingList = []; // 当前已配置的词条集合
 let globalIDList = []; // 可用的 id 集合
@@ -19,6 +19,7 @@ function readCSV(filePath) {
         return reject(err);
       }
 
+      // Papa.parse 解析 CSV 数据为 JSON 数组
       const parsedData = Papa.parse(data, {
         header: true, // 将第一行作为表头
         skipEmptyLines: true, // 跳过空行
@@ -33,20 +34,26 @@ function readCSV(filePath) {
   });
 }
 
-// 根据读取的文件进行初始化。务必确保此方法仅在服务重启/启动之后被调用一次
+/* 
+根据读取的文件进行初始化。务必确保此方法仅在服务重启/启动之后被调用一次
+1、从 CSV 文件读取多语言词条数据
+2、构建内存数据结构供快速查询
+3、生成可用 ID 池（用于新增词条时自动分配唯一 ID）
+4、确保数据排序规则与 ID 连续性
+*/
 async function loadBingList() {
   const filePath = bingFilePath;
 
   try {
-    const collection = await readCSV(filePath);
+    const collection = await readCSV(filePath); // 读取csv文件内容
     let bingMap = {};
     let idList = [];
-
+    console.log("++++++++++++++++++++初始的collection+++++++++++++", collection.slice(25, 26));
     collection.forEach((item) => {
       idList.push(item.id);
       bingMap[item.id] = {
         id: item.id,
-        source: item.source,
+        source: item.Source,
         target: {
           "zh-CN": item["target(zh-CN)"],
           "zh-HK": item["target(zh-HK)"],
@@ -56,50 +63,39 @@ async function loadBingList() {
       };
     });
 
-    loadExtraIDList(idList);
-
-    // return (globalBingList = quickSort(idList, compareById).map(
-    //   (id) => bingMap[id]
-    // ));
-
-    return (globalBingList = idList
+    // 生成可用 ID 池
+    
+    // console.log("idList", idList.slice(0, 10), idList.slice(2740,2747));
+    globalBingList = idList
       .slice()
       .sort(compareById)
       .map(
         // 注意要复制数组
         (id) => bingMap[id]
-      ));
+      );
+    console.log("globalBingList", globalBingList.slice(25,26));
+    
+    commit() // 将排序后的内容重新写入csv文件
+
+    // 根据入参 bingList 计算出空闲的 id 队列
+    loadExtraIDList(idList);
+
+    return globalBingList;
   } catch (error) {
     console.error("读取或解析 CSV 文件时出错:", error);
   }
 }
 
-// 针对集合的快排（相同id不稳定）
-function quickSort(arr, compareFn) {
-  if (arr.length <= 1) return arr;
-
-  const pivot = arr[0];
-  const left = [];
-  const right = [];
-
-  for (let i = 1; i < arr.length; i++) {
-    if (compareFn(arr[i], pivot) < 0) {
-      left.push(arr[i]);
-    } else {
-      right.push(arr[i]);
-    }
-  }
-
-  return [...quickSort(left, compareFn), pivot, ...quickSort(right, compareFn)];
-}
-
 // 比较函数：按 id 字段排序（字符串比较）
 function compareById(a, b) {
-  return a.localeCompare(b);
+  const numA = parseInt(a.split("-")[1]);
+  const numB = parseInt(b.split("-")[1]);
+  return numA - numB; 
 }
 
 // 根据入参 bingList 计算出空闲的 id 队列
 function loadExtraIDList(currentIDList) {
+  console.log("我被执行了一次");
   if (currentIDList.length === 0) return [];
 
   let previousID = 0;
@@ -127,7 +123,7 @@ function loadExtraIDList(currentIDList) {
       }`;
     }
   }
-
+  
   return globalIDList;
 }
 
@@ -144,7 +140,7 @@ function applyNewID() {
   if (globalIDList.length === 0) return null;
 
   let newID = globalIDList.find((item) => item.status === "ready");
-
+  console.log("newID", newID);
   if (newID) {
     newID.status = "applied";
 
@@ -269,10 +265,10 @@ function commit(type, bingData) {
   // 生成 CSV 数据
   const csvData = dataCopy.map((b) => ({
     id: b.id,
-    source: b.source,
+    Source: b.source,
     "target(zh-CN)": b.target["zh-CN"],
-    "target(zh-HK)": b.target["zh-HK"],
     "target(en-US)": b.target["en-US"],
+    "target(zh-HK)": b.target["zh-HK"],
   }));
 
   // 写入文件
@@ -428,9 +424,11 @@ async function batchUpload(file) {
       success: 0,
       errors: [],
     };
-
+    let i = 0;
     // 逐行处理Excel数据
     worksheet.eachRow({ includeEmpty: false }, (row, rowNumber) => {
+      i++;
+      console.log("执行次数", i);
       if (rowNumber === 1) return; // 跳过表头
 
       results.total++;
