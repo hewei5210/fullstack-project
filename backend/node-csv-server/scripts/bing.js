@@ -48,7 +48,6 @@ async function loadBingList() {
     const collection = await readCSV(filePath); // 读取csv文件内容
     let bingMap = {};
     let idList = [];
-    console.log("++++++++++++++++++++初始的collection+++++++++++++", collection.slice(25, 26));
     collection.forEach((item) => {
       idList.push(item.id);
       bingMap[item.id] = {
@@ -63,9 +62,6 @@ async function loadBingList() {
       };
     });
 
-    // 生成可用 ID 池
-    
-    // console.log("idList", idList.slice(0, 10), idList.slice(2740,2747));
     globalBingList = idList
       .slice()
       .sort(compareById)
@@ -73,9 +69,8 @@ async function loadBingList() {
         // 注意要复制数组
         (id) => bingMap[id]
       );
-    console.log("globalBingList", globalBingList.slice(25,26));
-    
-    commit() // 将排序后的内容重新写入csv文件
+
+    commit(); // 将排序后的内容重新写入csv文件
 
     // 根据入参 bingList 计算出空闲的 id 队列
     loadExtraIDList(idList);
@@ -90,12 +85,11 @@ async function loadBingList() {
 function compareById(a, b) {
   const numA = parseInt(a.split("-")[1]);
   const numB = parseInt(b.split("-")[1]);
-  return numA - numB; 
+  return numA - numB;
 }
 
 // 根据入参 bingList 计算出空闲的 id 队列
 function loadExtraIDList(currentIDList) {
-  console.log("我被执行了一次");
   if (currentIDList.length === 0) return [];
 
   let previousID = 0;
@@ -123,7 +117,7 @@ function loadExtraIDList(currentIDList) {
       }`;
     }
   }
-  
+
   return globalIDList;
 }
 
@@ -140,7 +134,6 @@ function applyNewID() {
   if (globalIDList.length === 0) return null;
 
   let newID = globalIDList.find((item) => item.status === "ready");
-  console.log("newID", newID);
   if (newID) {
     newID.status = "applied";
 
@@ -174,77 +167,7 @@ async function init() {
   console.log("=== Global bing list was ready! ===");
 }
 
-// 提交不同类型修改，使用数据副本进行处理，若成功写文件再同步到内存。
-// 注意 globalBingList 只能在此方法中（或初始化时）修改，其余地方当禁止访问。
-// 此处操作会保证 globalBingList 和本地 csv 文件的同步性。
-// function commit(type, bingData) {
-//   if (writeStatus === "write") return;
-
-//   writeStatus = "write";
-
-//   let data, replaceIndex;
-
-//   if (type === "add") {
-//     data = globalBingList.concat(bingData);
-//   } else if (type === "update") {
-//     replaceIndex = globalBingList.findIndex((bing) => bing.id === bingData.id);
-
-//     if (replaceIndex === -1) {
-//       throw "编辑失败：未找到编辑项";
-//     }
-
-//     let copy = globalBingList.slice();
-
-//     copy.splice(replaceIndex, 1, Object.assign({}, bingData));
-
-//     data = copy;
-//   } else if (type === "del") {
-//     replaceIndex = globalBingList.findIndex((bing) => bing.id === bingData.id);
-
-//     if (replaceIndex === -1) {
-//       throw "删除失败：未找到删除项";
-//     }
-
-//     let copy = globalBingList.slice();
-
-//     copy.splice(replaceIndex, 1);
-
-//     data = copy;
-//   }
-
-//   // 写入前再处理下，映射为 csv 文件内字段
-//   data = data.map((bing) => ({
-//     id: bing.id,
-//     source: bing.source || "",
-//     "target(zh-CN)": bing.target["zh-CN"] || "",
-//     "target(zh-HK)": bing.target["zh-HK"] || "",
-//     "target(en-US)": bing.target["en-US"] || "",
-//   }));
-
-//   // 将 json 数据转换为 csv 字符串，以字段名为列名称
-//   const csvString = Papa.unparse(data);
-
-//   fs.writeFile(bingFilePath, csvString, (err) => {
-//     if (err) {
-//       console.error("写入文件时出错:", err);
-
-//       writeStatus = "ready";
-//     } else {
-//       console.log(`CSV 文件已成功写入`);
-
-//       if (type === "add") {
-//         globalBingList.push(bingData);
-//       } else if (type === "update") {
-//         globalBingList.splice(replaceIndex, 1, bingData);
-//       } else if (type === "del") {
-//         globalBingList.splice(replaceIndex, 1);
-//       }
-
-//       writeStatus = "ready";
-//     }
-//   });
-// }
-function commit(type, bingData) {
+async function commit(type, bingData) {
   if (writeStatus === "write") return;
 
   writeStatus = "write";
@@ -254,7 +177,17 @@ function commit(type, bingData) {
 
   // 操作副本数据
   if (type === "add") {
-    dataCopy.push(bingData); // ✅ 直接操作副本
+    // 查找插入位置（按 id 升序）
+    const insertIndex = dataCopy.findIndex(
+      (item) =>
+        parseInt(item.id.split("-")[1]) > parseInt(bingData.id.split("-")[1])
+    );
+    // 插入到正确位置或末尾
+    if (insertIndex !== -1) {
+      dataCopy.splice(insertIndex, 0, bingData); // ✅ 直接操作副本
+    } else {
+      dataCopy.push(bingData); // ✅ 直接操作副本
+    }
   } else if (type === "update") {
     const index = dataCopy.findIndex((b) => b.id === bingData.id);
     if (index > -1) dataCopy[index] = bingData;
@@ -282,8 +215,9 @@ function commit(type, bingData) {
     // ✅ 原子性更新内存数据
     globalBingList = dataCopy;
     writeStatus = "ready";
-    console.log("数据写入成功并同步内存");
   });
+
+  console.log("数据写入成功并同步内存,并重新排序");
 }
 async function add(bing) {
   bing = Object.assign({}, bing.body);
@@ -296,12 +230,11 @@ async function add(bing) {
 
   if (appliedID.status !== "applied")
     return Promise.reject("新增：提交的 id 不合法，未提交申请");
-
   return commit("add", {
     id: bing.id,
     source: bing.source || "",
     target: {
-      "zh-CN": bing.target["zh-CN"],
+      "zh-CN": bing.source,
       "zh-HK": bing.target["zh-HK"],
       "en-US": bing.target["en-US"],
     },
@@ -428,7 +361,6 @@ async function batchUpload(file) {
     // 逐行处理Excel数据
     worksheet.eachRow({ includeEmpty: false }, (row, rowNumber) => {
       i++;
-      console.log("执行次数", i);
       if (rowNumber === 1) return; // 跳过表头
 
       results.total++;
