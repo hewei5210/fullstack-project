@@ -359,8 +359,9 @@ async function batchUpload(file) {
     };
     let i = 0;
     // 逐行处理Excel数据
-    worksheet.eachRow({ includeEmpty: false }, (row, rowNumber) => {
+    worksheet.eachRow({ includeEmpty: false }, async(row, rowNumber) => {
       i++;
+      console.log("第"+i+"行")
       if (rowNumber === 1) return; // 跳过表头
 
       results.total++;
@@ -380,14 +381,9 @@ async function batchUpload(file) {
         if (!record.id || !record.source || !record.target["zh-CN"]) {
           throw new Error("必填字段缺失");
         }
-
-        // 检查ID唯一性
-        // if (globalBingList.some((item) => item.id === record.id)) {
-        //   throw new Error("ID已存在");
-        // }
-
+        console.log('record',record)
         // 提交数据
-        commit("add", record);
+        await commit("add", record);
         results.data.push(record);
         results.success++;
       } catch (error) {

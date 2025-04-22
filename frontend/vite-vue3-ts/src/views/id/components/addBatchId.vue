@@ -21,7 +21,7 @@
       </div>
       <template #tip>
         <div >
-          <el-link type="primary" :underline="false" style="font-size: small;" @click="downloadTemplate">
+          <el-link type="primary" :underline="false" style="font-size: small; margin-left: 10px;" @click="downloadTemplate">
             点击下载Excel模板
           </el-link>
         </div>
@@ -29,7 +29,7 @@
     </el-upload>
 
     <template #footer>
-      <el-button @click="visible = false">取消</el-button>
+      <el-button @click="visible = false">关闭</el-button>
     </template>
   </el-dialog>
 </template>
