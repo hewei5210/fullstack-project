@@ -20,8 +20,13 @@
         拖拽文件到这里或者 <em>点击这里上传</em>
       </div>
       <template #tip>
-        <div >
-          <el-link type="primary" :underline="false" style="font-size: small; margin-left: 10px;" @click="downloadTemplate">
+        <div>
+          <el-link
+            type="primary"
+            :underline="false"
+            style="font-size: small; margin-left: 10px"
+            @click="downloadTemplate"
+          >
             点击下载Excel模板
           </el-link>
         </div>
@@ -77,14 +82,14 @@ declare global {
     readonly type: string;
   }
 }
-const beforeUpload = (file:File) => {
-  const isExcel = ['.xls', '.xlsx'].some(ext => file.name.endsWith(ext))
+const beforeUpload = (file: File) => {
+  const isExcel = [".xls", ".xlsx"].some((ext) => file.name.endsWith(ext));
   if (!isExcel) {
-    ElMessage.error('仅支持Excel文件')
-    return false
+    ElMessage.error("仅支持Excel文件");
+    return false;
   }
-  return true
-}
+  return true;
+};
 
 // 可选：定义响应体类型
 interface UploadResponse {
@@ -98,18 +103,21 @@ interface UploadResponse {
 // 处理成功响应
 const handleSuccess = (response: UploadResponse) => {
   if (response.code === 200) {
-    ElMessage.success(`成功导入${response.data.success}条数据`)
-    emit('submit')
+    visible.value = false;
+    ElMessage({
+      message: `成功导入${response.data.success}条数据`,
+      type: "success",
+    });
+    emit("submit");
   } else {
-    ElMessage.error(response.message)
+    ElMessage.error(response.message);
   }
-}
-
+};
 
 // 错误处理
-const handleError = (err:Error) => {
-  ElMessage.error(`上传失败: ${err.message}`)
-}
+const handleError = (err: Error) => {
+  ElMessage.error(`上传失败: ${err.message}`);
+};
 
 const handleClose = () => {
   formRef.value?.resetFields();
@@ -118,10 +126,13 @@ const handleClose = () => {
 // 下载模板
 const downloadTemplate = async () => {
   try {
-    const response = await axios.get("http://localhost:3000/api/downloadTemplate", {
-      responseType: "blob"
-    });
-    
+    const response = await axios.get(
+      "http://localhost:3000/api/downloadTemplate",
+      {
+        responseType: "blob",
+      }
+    );
+
     const url = window.URL.createObjectURL(new Blob([response.data]));
     const link = document.createElement("a");
     link.href = url;

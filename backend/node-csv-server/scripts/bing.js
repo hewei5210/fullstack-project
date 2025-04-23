@@ -163,7 +163,6 @@ function applyNewID() {
 
 async function init() {
   await loadBingList();
-
   console.log("=== Global bing list was ready! ===");
 }
 
@@ -188,6 +187,16 @@ async function commit(type, bingData) {
     } else {
       dataCopy.push(bingData); // ✅ 直接操作副本
     }
+  } else if (type === "batchAdd") {
+    bingData.forEach((record) => {
+      const insertIndex = dataCopy.findIndex(
+        (item) =>
+          parseInt(item.id.split("-")[1]) > parseInt(record.id.split("-")[1])
+      );
+      insertIndex !== -1
+        ? dataCopy.splice(insertIndex, 0, record)
+        : dataCopy.push(record);
+    });
   } else if (type === "update") {
     const index = dataCopy.findIndex((b) => b.id === bingData.id);
     if (index > -1) dataCopy[index] = bingData;
@@ -357,11 +366,8 @@ async function batchUpload(file) {
       success: 0,
       errors: [],
     };
-    let i = 0;
     // 逐行处理Excel数据
-    worksheet.eachRow({ includeEmpty: false }, async(row, rowNumber) => {
-      i++;
-      console.log("第"+i+"行")
+    worksheet.eachRow({ includeEmpty: false }, (row, rowNumber) => {
       if (rowNumber === 1) return; // 跳过表头
 
       results.total++;
@@ -376,14 +382,10 @@ async function batchUpload(file) {
             "zh-HK": row.getCell(3).value || "",
           },
         };
-
         // 数据校验
         if (!record.id || !record.source || !record.target["zh-CN"]) {
           throw new Error("必填字段缺失");
         }
-        console.log('record',record)
-        // 提交数据
-        await commit("add", record);
         results.data.push(record);
         results.success++;
       } catch (error) {
@@ -393,6 +395,9 @@ async function batchUpload(file) {
         });
       }
     });
+
+    // 所有数据处理完成后，统一提交
+    await commit("batchAdd", results.data); // 新增批量操作类型
 
     return {
       code: 200,

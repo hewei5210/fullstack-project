@@ -80,10 +80,7 @@
       style="float: right; margin: 15px 0"
     />
     <AddId v-model="dialogVisible" @submit="handleSubmitSuccess" />
-    <AddBatchId
-      v-model="batchDialogVisible"
-      @submit="handleSubmitSuccess"
-    />
+    <AddBatchId v-model="batchDialogVisible" @submit="handleSubmitSuccess" />
     <EditId
       v-model="editDialogVisible"
       :current-edit-item="currentEditItem"
@@ -106,7 +103,7 @@ import EditId from "./components/editId.vue";
 import DeleteId from "./components/deleteId.vue";
 import ExportDialog from "./components/exportDialog.vue";
 import { Plus, Download, Upload } from "@element-plus/icons-vue";
-import { ElMessage } from "element-plus"; // Import ElMessage as a value
+// import { ElMessage } from "element-plus";
 import axios from "axios";
 
 // 分页
@@ -190,11 +187,10 @@ const showDeleteConfirm = (row: Translation) => {
   deleteDialogVisible.value = true;
 };
 
-
 // 在父组件脚本中添加处理函数
 const handleSubmitSuccess = () => {
   getData(); // 调用现有的数据获取方法
-  ElMessage.success("列表已刷新");
+  // ElMessage.success("列表已刷新");
 };
 
 onMounted(() => {
