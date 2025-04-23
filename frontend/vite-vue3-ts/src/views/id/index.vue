@@ -20,6 +20,23 @@
         style="margin-left: 10px"
         >导出数据</el-button
       >
+      <el-input
+        v-model="searchContent"
+        style="max-width: 350px; margin-left: 10px"
+        :placeholder="placeholderMap[select]"
+      >
+        <template #prepend>
+          <el-select v-model="select" style="width: 130px">
+            <el-option label="翻译项ID" value="id" />
+            <el-option label="翻译项" value="zh-CN" />
+            <el-option label="翻译项-英文" value="en-US" />
+            <el-option label="翻译项-繁体" value="zh-HK" />
+          </el-select>
+        </template>
+        <template #append>
+          <el-button :icon="Search" @click="searchData" />
+        </template>
+      </el-input>
     </div>
     <!-- 列表 -->
     <el-table :data="tableData" stripe style="width: 100%">
@@ -102,7 +119,7 @@ import AddBatchId from "./components/addBatchId.vue";
 import EditId from "./components/editId.vue";
 import DeleteId from "./components/deleteId.vue";
 import ExportDialog from "./components/exportDialog.vue";
-import { Plus, Download, Upload } from "@element-plus/icons-vue";
+import { Plus, Download, Upload, Search } from "@element-plus/icons-vue";
 // import { ElMessage } from "element-plus";
 import axios from "axios";
 
@@ -132,9 +149,43 @@ interface Translation {
   status: string;
 }
 
+// 搜索相关
+type PlaceholderKey = "id" | "zh-CN" | "en-US" | "zh-HK";
+const placeholderMap: Record<PlaceholderKey, string> = {
+  id: "请输入翻译项ID",
+  "zh-CN": "请输入翻译项",
+  "en-US": "请输入翻译项-英文",
+  "zh-HK": "请输入翻译项-繁体",
+};
+
+const select = ref<PlaceholderKey>("zh-CN");
+const searchContent = ref("");
+
+const searchData = () => {
+  axios
+    .get("http://localhost:3000/api/search", {
+      headers: {
+        "Content-Type": "application/json",
+      },
+      params: {
+        page: currentPage.value,
+        pageSize: pageSize.value,
+        searchSelect: select.value,
+        searchContent: searchContent.value,
+      },
+    })
+    .then((res) => {
+      tableData.value = res.data.data.data;
+      total.value = res.data.data.total;
+    });
+};
 // 获取列表数据
 let tableData = ref<Translation[]>([]); // 默认值[];
 const getData = () => {
+  if (searchContent.value) {
+    searchData();
+    return;
+  }
   axios
     .get("http://localhost:3000/api/getBingList", {
       headers: {

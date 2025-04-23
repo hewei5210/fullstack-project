@@ -11,6 +11,15 @@ function getGlobalBingList(res, reqData) {
   });
 }
 
+function search(res, reqData){
+  let searchList = bingServer.search(reqData,res)
+  res.status(200).json({
+    status: 200,
+    message: "success",
+    data: searchList,
+  });
+}
+
 function applyId(res) {
   let data = bingServer.applyNewID();
 
@@ -164,4 +173,5 @@ module.exports = {
   applyId,
   downloadTemplate,
   batchUpload,
+  search
 };

@@ -285,6 +285,23 @@ function getList(bing) {
   return { data, total };
 }
 
+function search(bing) {
+  let data = globalBingList.filter((item) => {
+    if (bing.query.searchSelect === "id") {
+      return item.id.includes(bing.query.searchContent);
+    } else {
+      return item.target[bing.query.searchSelect].includes(
+        bing.query.searchContent
+      );
+    }
+  });
+  const total = data.length;
+  const start = (bing.query.page - 1) * bing.query.pageSize;
+  const end = Number(start) + Number(bing.query.pageSize);
+  data = data.slice(start, end);
+  return { data, total };
+}
+
 async function importFile() {}
 
 async function exportFile(langType) {
@@ -414,6 +431,7 @@ module.exports = {
   add,
   update,
   del,
+  search,
   getList,
   importFile,
   exportFile,
