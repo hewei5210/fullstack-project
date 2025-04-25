@@ -82,7 +82,7 @@ async function updateBing(res, reqData) {
   }
 }
 async function delBing(res, reqData) {
-  if (!reqData.body) {
+  if (!reqData.query) {
     return res.status(400).json({
       status: "400",
       message: "参数不完整",

@@ -62,9 +62,9 @@
 </template>
 
 <script setup lang="ts">
+import { http } from "../../../net/http.ts";
 import { ref, watch } from "vue";
 import { ElMessage } from "element-plus";
-import axios from "axios";
 
 interface Translation {
   id: string;
@@ -77,7 +77,6 @@ const props = defineProps<{
   modelValue: boolean;
   currentEditItem: Translation;
 }>();
-
 
 const emit = defineEmits<{
   (e: "update:model-value", value: boolean): void;
@@ -103,7 +102,7 @@ watch(
 watch(
   () => props.modelValue,
   (val) => {
-    console.log('props.modelValue',val)
+    console.log("props.modelValue", val);
   }
 );
 
@@ -112,22 +111,21 @@ const handleCancel = () => {
 };
 
 const handleSubmit = () => {
-  axios
-      .put("http://localhost:3000/api/updateBing", {
-        id: localEditItem.value.id,
-        source: localEditItem.value.target['zh-CN'],
-        target: localEditItem.value.target,
-      })
-      .then(
-        () => {
-          ElMessage.success("编辑成功");
-          emit("update:model-value", false);
-          emit("submit", localEditItem.value);
-        },
-        () => {
-          ElMessage.error("编辑失败");
-        }
-      );
-  
+  http
+    .put("/api/updateBing", {
+      id: localEditItem.value.id,
+      source: localEditItem.value.target["zh-CN"],
+      target: localEditItem.value.target,
+    })
+    .then(
+      () => {
+        ElMessage.success("编辑成功");
+        emit("update:model-value", false);
+        emit("submit", localEditItem.value);
+      },
+      () => {
+        ElMessage.error("编辑失败");
+      }
+    );
 };
 </script>

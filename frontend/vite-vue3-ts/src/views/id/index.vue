@@ -113,6 +113,7 @@
 </template>
 
 <script lang="ts" setup>
+import { http } from "../../net/http.ts";
 import { ref, onMounted } from "vue";
 import AddId from "./components/addId.vue";
 import AddBatchId from "./components/addBatchId.vue";
@@ -121,7 +122,6 @@ import DeleteId from "./components/deleteId.vue";
 import ExportDialog from "./components/exportDialog.vue";
 import { Plus, Download, Upload, Search } from "@element-plus/icons-vue";
 // import { ElMessage } from "element-plus";
-import axios from "axios";
 
 // 分页
 import type { ComponentSize } from "element-plus";
@@ -162,22 +162,16 @@ const select = ref<PlaceholderKey>("zh-CN");
 const searchContent = ref("");
 
 const searchData = () => {
-  axios
-    .get("http://localhost:3000/api/search", {
-      headers: {
-        "Content-Type": "application/json",
-      },
-      params: {
-        page: currentPage.value,
-        pageSize: pageSize.value,
-        searchSelect: select.value,
-        searchContent: searchContent.value,
-      },
-    })
-    .then((res) => {
-      tableData.value = res.data.data.data;
-      total.value = res.data.data.total;
-    });
+  const params = {
+    page: currentPage.value,
+    pageSize: pageSize.value,
+    searchSelect: select.value,
+    searchContent: searchContent.value,
+  };
+  http.get("/api/search", params).then((res) => {
+    tableData.value = res.data.data.data;
+    total.value = res.data.data.total;
+  });
 };
 // 获取列表数据
 let tableData = ref<Translation[]>([]); // 默认值[];
@@ -186,17 +180,14 @@ const getData = () => {
     searchData();
     return;
   }
-  axios
-    .get("http://localhost:3000/api/getBingList", {
-      headers: {
-        "Content-Type": "application/json",
-      },
-      params: { page: currentPage.value, pageSize: pageSize.value },
-    })
-    .then((res) => {
-      tableData.value = res.data.data.data;
-      total.value = res.data.data.total;
-    });
+  const params = {
+    page: currentPage.value,
+    pageSize: pageSize.value,
+  };
+  http.get("/api/getBingList", params).then((res) => {
+    tableData.value = res.data.data.data;
+    total.value = res.data.data.total;
+  });
 };
 
 // 控制新增翻译项弹窗

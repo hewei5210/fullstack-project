@@ -45,6 +45,7 @@ watch(visible, (val) => emit("update:modelValue", val));
 
 const selectedLang = ref("zh-CN"); // 绑定单选值
 
+const BASE_URL = import.meta.env.VITE_APP_API_BASE;
 const handleExport = () => {
   if (!selectedLang.value) {
     ElMessage.warning("请先选择导出类型");
@@ -54,7 +55,7 @@ const handleExport = () => {
   // 创建隐藏的 iframe
   const iframe = document.createElement("iframe");
   iframe.style.display = "none";
-  iframe.src = `http://localhost:3000/api/exportBing?lang=${selectedLang.value}`;
+  iframe.src = `${BASE_URL}/api/exportBing?lang=${selectedLang.value}`;
   document.body.appendChild(iframe);
 
   setTimeout(() => {

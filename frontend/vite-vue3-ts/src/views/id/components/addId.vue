@@ -75,11 +75,11 @@
 </template>
 
 <script setup lang="ts">
+import { http } from "../..//../net/http.ts";
 import { ref, reactive, watch } from "vue";
 import { ElMessage } from "element-plus"; // Import ElMessage as a value
 import type { FormInstance, FormRules } from "element-plus";
 import { RefreshRight } from "@element-plus/icons-vue";
-import axios from "axios";
 
 interface TranslationItem {
   id: string;
@@ -126,9 +126,8 @@ watch(visible, (val) => emit("update:modelValue", val));
 const handleSubmit = async () => {
   try {
     await formRef.value?.validate();
-    // 发送POST请求
-    axios
-      .post("http://localhost:3000/api/addBing", {
+    http
+      .post("/api/addBing", {
         id: formData.id,
         source: formData.source,
         target: formData.target,
@@ -153,16 +152,9 @@ const handleClose = () => {
 };
 
 const generateId = () => {
-  axios
-    .get("http://localhost:3000/api/applyId", {
-      headers: {
-        "Content-Type": "application/json",
-      },
-    })
-    .then((res) => {
-      console.log("res", res.data);
-      formData.id = res.data.data;
-    });
+  http.get("/api/applyId").then((res) => {
+    formData.id = res.data.data;
+  });
 };
 </script>
 <style scoped>

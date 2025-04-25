@@ -12,7 +12,7 @@
       :on-success="handleSuccess"
       :on-error="handleError"
       drag
-      action="http://localhost:3000/api/batchUpload/translationItem"
+      :action="`${BASE_URL}/api/batchUpload/translationItem`"
       multiple
     >
       <el-icon class="el-icon--upload"><upload-filled /></el-icon>
@@ -40,11 +40,12 @@
 </template>
 
 <script setup lang="ts">
+import { http } from "../..//../net/http.ts";
 import { ref, watch } from "vue";
 import { ElMessage } from "element-plus"; // Import ElMessage as a value
 import { UploadFilled } from "@element-plus/icons-vue";
 import type { FormInstance } from "element-plus";
-import axios from "axios";
+const BASE_URL = import.meta.env.VITE_APP_API_BASE;
 
 interface TranslationItem {
   id: string;
@@ -126,13 +127,9 @@ const handleClose = () => {
 // 下载模板
 const downloadTemplate = async () => {
   try {
-    const response = await axios.get(
-      "http://localhost:3000/api/downloadTemplate",
-      {
-        responseType: "blob",
-      }
-    );
-
+    const response = await http.get("/api/downloadTemplate", null, {
+      responseType: "blob",
+    });
     const url = window.URL.createObjectURL(new Blob([response.data]));
     const link = document.createElement("a");
     link.href = url;

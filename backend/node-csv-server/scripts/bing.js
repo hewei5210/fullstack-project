@@ -267,7 +267,7 @@ async function update(bing) {
 }
 
 async function del(bing) {
-  bing = Object.assign({}, bing.body);
+  bing = Object.assign({}, bing.query);
   if (!bing.id || typeof bing.id !== "string" || !bing.id.startsWith("ccfe-"))
     return Promise.reject(`删除：缺少合法 id:${bing.id}`);
 

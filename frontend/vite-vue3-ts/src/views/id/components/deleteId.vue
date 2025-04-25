@@ -17,9 +17,9 @@
   </template>
   
   <script lang="ts" setup>
+  import { http } from "../../../net/http.ts";
   import { ref, watch } from "vue";
   import { ElMessage } from "element-plus";
-  import axios from "axios";
   
   interface Translation {
     id: string;
@@ -56,17 +56,13 @@
     
     try {
       deleteLoading.value = true;
-      await axios.delete("http://localhost:3000/api/delBing", {
-        data: { id: props.currentDeleteItem.id },
-        headers: { "Content-Type": "application/json" },
-      });
-  
+      const params = { id: props.currentDeleteItem.id };
+      await http.delete(`/api/delBing`, params);
       ElMessage.success("删除成功");
       visible.value = false;
       emit("submit");
     } catch (error) {
       ElMessage.error("删除失败");
-      console.error("删除失败:", error);
     } finally {
       deleteLoading.value = false;
     }

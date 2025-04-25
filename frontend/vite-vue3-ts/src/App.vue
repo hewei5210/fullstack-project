@@ -22,10 +22,6 @@
             <el-icon><house /></el-icon>
             <span>翻译项管理</span>
           </el-menu-item>
-          <el-menu-item index="/about">
-            <el-icon><info-filled /></el-icon>
-            <span>关于我们</span>
-          </el-menu-item>
         </el-menu>
       </el-aside>
       <el-main>

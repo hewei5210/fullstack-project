@@ -9,10 +9,6 @@ const routes = [
     path: '/id',
     component: () => import('@/views/id/index.vue')
   },
-  {
-    path: '/about',
-    component: () => import('@/views/About.vue')
-  }
 ]
 
 const router = createRouter({
