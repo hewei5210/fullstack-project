@@ -40,7 +40,6 @@ router.beforeEach((to, from, next) => {
     next('/console/home') // 重定向到控制台首页
     return
   }
-  console.log("1111111")
   next()
 })
 

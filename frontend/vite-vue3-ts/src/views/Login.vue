@@ -6,7 +6,7 @@
       alt="logo"
     />
     <el-form label-width="auto" @submit.prevent="handleLogin">
-      <h2>用户登录</h2>
+      <h2>前端工具平台登录</h2>
       <el-form-item label="用户名" prop="username">
         <el-input v-model="form.username" placeholder="请输入用户名" />
       </el-form-item>
