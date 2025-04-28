@@ -58,30 +58,8 @@ service.interceptors.response.use(
     return res;
   },
   (error) => {
-    // 统一错误处理
-    let message = "";
-    if (error && error.response) {
-      switch (error.response.status) {
-        case 401:
-          message = "登录已过期，请重新登录";
-          localStorage.removeItem("token");
-          window.location.reload();
-          break;
-        case 403:
-          message = "拒绝访问";
-          break;
-        case 404:
-          message = "请求地址错误";
-          break;
-        case 500:
-          message = "服务器故障";
-          break;
-        default:
-          message = "网络连接故障";
-      }
-    }
-    ElMessage.error(message);
-    return Promise.reject(error);
+    console.log(error);
+    ElMessage.error(error.response.data.message);
   }
 );
 

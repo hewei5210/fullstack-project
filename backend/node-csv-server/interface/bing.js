@@ -1,6 +1,24 @@
 const bingServer = require("../scripts/bing.js");
 const fs = require("fs");
 
+function login(res, reqData) {
+  try {
+    let data = bingServer.login(reqData);
+
+    res.status(200).json({
+      status: 200,
+      message: "success",
+      data: data,
+    });
+  } catch (e) {
+    res.status(400).json({
+      status: 400,
+      message: e.message || "认证失败",
+      data: "",
+    });
+  }
+}
+
 function getGlobalBingList(res, reqData) {
   let bingList = bingServer.getList(reqData);
 
@@ -11,8 +29,8 @@ function getGlobalBingList(res, reqData) {
   });
 }
 
-function search(res, reqData){
-  let searchList = bingServer.search(reqData,res)
+function search(res, reqData) {
+  let searchList = bingServer.search(reqData, res);
   res.status(200).json({
     status: 200,
     message: "success",
@@ -165,6 +183,7 @@ async function batchUpload(res, reqData) {
 }
 
 module.exports = {
+  login,
   getGlobalBingList,
   addBing,
   updateBing,
@@ -173,5 +192,5 @@ module.exports = {
   applyId,
   downloadTemplate,
   batchUpload,
-  search
+  search,
 };

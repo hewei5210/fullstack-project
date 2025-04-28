@@ -3,6 +3,11 @@ const path = require("path");
 const ExcelJS = require("exceljs");
 const Papa = require("papaparse");
 
+// 在文件顶部新增
+const jwt = require("jsonwebtoken");
+const SECRET_KEY = "your_ultra_secure_secret"; // 生产环境应使用环境变量
+const TOKEN_EXPIRES = "2h"; // Token有效期
+
 const bingFilePath = "./data/bing.csv";
 const idPrefix = "ccfe-";
 const globalID_limit = "3000"; // 一次的上传极限是3000
@@ -228,6 +233,35 @@ async function commit(type, bingData) {
 
   console.log("数据写入成功并同步内存,并重新排序");
 }
+
+function login(bing) {
+  bing = Object.assign({}, bing.body);
+
+  const { username, password } = bing;
+
+  if (!username || !password) {
+    throw new Error("用户名和密码不能为空");
+  }
+
+  if (username != "admin" || password != "watermelon") {
+    throw new Error("用户名或密码错误");
+  }
+
+  const payload = {
+    userId: 123, // 应从数据库获取实际ID
+    username: username,
+    roles: ["admin"], // 根据实际角色系统设置
+  };
+
+  const token = jwt.sign(payload, SECRET_KEY, { expiresIn: TOKEN_EXPIRES });
+
+  let data = {
+    token: "Bearer " + token, // 推荐Bearer方案[4](@ref)
+  };
+
+  return data;
+}
+
 async function add(bing) {
   bing = Object.assign({}, bing.body);
   if (!bing.id || typeof bing.id !== "string" || !bing.id.startsWith("ccfe-"))
@@ -427,6 +461,7 @@ async function batchUpload(file) {
 }
 
 module.exports = {
+  login,
   init,
   add,
   update,

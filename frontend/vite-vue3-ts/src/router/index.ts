@@ -1,19 +1,47 @@
-import { createRouter, createWebHistory } from 'vue-router'
+import { createRouter, createWebHistory } from "vue-router";
 
 const routes = [
   {
-    path: '/',
-    component: () => import('@/views/Home.vue')
+    path: "/",
+    redirect: "/login",
   },
   {
-    path: '/id',
-    component: () => import('@/views/id/index.vue')
+    path: "/login",
+    component: () => import("@/views/Login.vue"),
   },
-]
+  {
+    path: "/console",
+    component: () => import("@/components/MainLayout.vue"),
+    children: [
+      {
+        path: "home",
+        component: () => import("@/views/Home.vue"),
+      },
+      {
+        path: "id",
+        component: () => import("@/views/id/index.vue"),
+      },
+    ],
+  },
+];
 
 const router = createRouter({
   history: createWebHistory(),
-  routes
+  routes,
+});
+
+// 全局前置守卫（必须写在导出之前）
+router.beforeEach((to, from, next) => {
+  console.log('全局前置守卫', to, from)
+  const isAuthenticated = localStorage.getItem('token')
+  
+  // 已登录时禁止访问登录页（避免循环）
+  if (isAuthenticated && to.path === '/login') {
+    next('/console/home') // 重定向到控制台首页
+    return
+  }
+  console.log("1111111")
+  next()
 })
 
-export default router
+export default router;
