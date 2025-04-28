@@ -1,12 +1,22 @@
 <template>
   <div class="login-container">
-    <el-form @submit.prevent="handleLogin">
+    <img
+      src="../../public/partying_face_color.svg"
+      class="login-image"
+      alt="logo"
+    />
+    <el-form label-width="auto" @submit.prevent="handleLogin">
       <h2>用户登录</h2>
       <el-form-item label="用户名" prop="username">
         <el-input v-model="form.username" placeholder="请输入用户名" />
       </el-form-item>
       <el-form-item label="密码" prop="password">
-        <el-input v-model="form.password" type="password" show-password />
+        <el-input
+          v-model="form.password"
+          type="password"
+          show-password
+          placeholder="请输入密码"
+        />
       </el-form-item>
       <el-button type="primary" native-type="submit">登录</el-button>
     </el-form>
@@ -31,3 +41,26 @@ const handleLogin = async () => {
   }
 };
 </script>
+
+<style scoped>
+.login-container {
+  display: flex;
+  justify-content: center; /* 水平居中 */
+  align-items: center; /* 垂直居中 */
+  min-height: 100vh; /* 视口高度 */
+}
+.login-image {
+  width: 50vh;
+  height: 50vh;
+  margin-right: 20vh;
+}
+
+.login-container {
+  /* 小眼睛图标定位修正 */
+  :deep(.el-input__suffix) {
+    position: absolute;
+    right: 8px;
+    padding: 0;
+  }
+}
+</style>
