@@ -256,6 +256,7 @@ function login(bing) {
   const token = jwt.sign(payload, SECRET_KEY, { expiresIn: TOKEN_EXPIRES });
 
   let data = {
+    username: username,
     token: "Bearer " + token, // 推荐Bearer方案[4](@ref)
   };
 

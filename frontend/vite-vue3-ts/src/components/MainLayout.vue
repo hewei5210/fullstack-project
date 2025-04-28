@@ -2,7 +2,29 @@
   <el-container class="common-layout" style="height: 100vh">
     <el-header style="text-align: right; font-size: 12px">
       <div class="toolbar">
-        <span>一蓑烟雨任平生</span>
+        <div
+          class="user-wrapper"
+          @mouseenter="showDropdown = true"
+          @mouseleave="handleMouseLeave"
+        >
+          <el-avatar :size="30" src="../../public/party_popper_color.svg" />
+          <span style="margin-left: 10px">{{ username }}</span>
+
+          <!-- 下拉菜单 -->
+          <transition name="el-zoom-in-top">
+            <div
+              v-show="showDropdown"
+              class="dropdown-menu"
+              @mouseenter="clearCloseTimer"
+              @mouseleave="startCloseTimer"
+            >
+              <div class="menu-item" @click="handleLogout">
+                <el-icon><SwitchButton /></el-icon>
+                <span>退出</span>
+              </div>
+            </div>
+          </transition>
+        </div>
       </div>
     </el-header>
     <el-container>
@@ -30,7 +52,44 @@
     </el-container>
   </el-container>
 </template>
+<script setup lang="ts">
+const username = localStorage.getItem("username");
 
+import { ref } from "vue";
+import { useRouter } from "vue-router";
+import { SwitchButton } from "@element-plus/icons-vue";
+
+const router = useRouter();
+const showDropdown = ref(false);
+let closeTimer: number | null = null;
+
+// 鼠标离开容器
+const handleMouseLeave = () => {
+  startCloseTimer();
+};
+
+// 启动关闭定时器（500ms延迟）
+const startCloseTimer = () => {
+  closeTimer = window.setTimeout(() => {
+    showDropdown.value = false;
+  }, 500);
+};
+
+// 清除关闭定时器
+const clearCloseTimer = () => {
+  if (closeTimer) {
+    clearTimeout(closeTimer);
+    closeTimer = null;
+  }
+};
+
+// 退出登录
+const handleLogout = () => {
+  localStorage.removeItem("token");
+  localStorage.removeItem("username");
+  router.push("/login");
+};
+</script>
 <style scoped>
 .common-layout .el-header {
   position: relative;
@@ -70,5 +129,47 @@
   justify-content: center;
   height: 100%;
   right: 20px;
+}
+
+.user-wrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+  padding: 8px 12px;
+  border-radius: 4px;
+  transition: background-color 0.3s;
+}
+
+.user-wrapper:hover {
+  background-color: #f0f0f0;
+}
+
+.dropdown-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  min-width: 100px;
+  background: #fff;
+  border-radius: 4px;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+  margin-top: 8px;
+  z-index: 2000;
+}
+
+.menu-item {
+  display: flex;
+  align-items: center;
+  padding: 8px 16px;
+  transition: background-color 0.3s;
+}
+
+.menu-item:hover {
+  background-color: #f5f5f5;
+}
+
+.menu-item .el-icon {
+  margin-right: 8px;
+  font-size: 14px;
 }
 </style>
