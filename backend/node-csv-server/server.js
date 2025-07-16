@@ -3,7 +3,7 @@ const path = require("path");
 const bingServer = require("./scripts/bing.js");
 const interfaceServer = require("./interface/index.js");
 // 新增CORS中间件导入
-const cors = require('cors');
+const cors = require("cors");
 
 const app = express();
 const multer = require("multer");
@@ -17,14 +17,14 @@ const staticDir = path.join(__dirname, "../frontend/dist");
 app.use(express.json());
 
 // 中间件：配置CORS（新增位置）
-app.use(cors({
-  origin: 'http://localhost:5173', // 前端开发地址
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-}));
-
-// 中间件：解析 URL 编码的表单数据
-app.use(express.urlencoded({ extended: true }));
+app.use(
+  cors({
+    origin: "http://localhost:5173", // 前端开发地址
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: true, // 允许凭证
+  })
+);
 
 // 中间件：解析 URL 编码的表单数据（如 POST 表单）
 app.use(express.urlencoded({ extended: true }));
@@ -33,8 +33,8 @@ app.use(express.urlencoded({ extended: true }));
 app.use("/web", express.static(staticDir));
 
 // 新增文件上传路由
-app.use('/api/batchUpload', upload.single('file'), (req, res) => {
-  interfaceServer(req, res);  // 转发到接口服务
+app.use("/api/batchUpload", upload.single("file"), (req, res) => {
+  interfaceServer(req, res); // 转发到接口服务
 });
 
 // api 路径转发到接口服务

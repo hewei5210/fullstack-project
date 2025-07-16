@@ -18,6 +18,7 @@ const BASE_URL = import.meta.env.VITE_APP_API_BASE;
 // 创建axios实例
 const service: AxiosInstance = axios.create({
   baseURL: BASE_URL,
+  withCredentials: true,
   timeout: 10000, // 请求超时时间
   headers: {
     "Content-Type": "application/json;charset=UTF-8",
@@ -54,11 +55,9 @@ service.interceptors.response.use(
     //   ElMessage.error(res.message || "Error");
     //   return Promise.reject(new Error(res.message || "Error"));
     // }
-
     return res;
   },
   (error) => {
-    console.log(error);
     ElMessage.error(error.response.data.message);
   }
 );

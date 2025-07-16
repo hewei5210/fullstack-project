@@ -6,6 +6,7 @@
     @close="handleClose"
   >
     <el-upload
+      ref="uploadRef"
       class="upload-demo"
       name="file"
       :before-upload="beforeUpload"
@@ -34,7 +35,7 @@
     </el-upload>
 
     <template #footer>
-      <el-button @click="visible = false">关闭</el-button>
+      <el-button @click="handleClose">关闭</el-button>
     </template>
   </el-dialog>
 </template>
@@ -44,7 +45,10 @@ import { http } from "../..//../net/http.ts";
 import { ref, watch } from "vue";
 import { ElMessage } from "element-plus"; // Import ElMessage as a value
 import { UploadFilled } from "@element-plus/icons-vue";
-import type { FormInstance } from "element-plus";
+import type { UploadInstance } from "element-plus";
+
+const uploadRef = ref<UploadInstance>(); // 获取el-upload组件引用
+
 const BASE_URL = import.meta.env.VITE_APP_API_BASE;
 
 interface TranslationItem {
@@ -64,9 +68,7 @@ const props = defineProps<{
 
 const emit = defineEmits(["update:modelValue", "submit"]);
 
-const formRef = ref<FormInstance>();
 const visible = ref(props.modelValue);
-// 初始化表单数据
 
 // 同步 v-model 状态
 watch(
@@ -104,9 +106,9 @@ interface UploadResponse {
 // 处理成功响应
 const handleSuccess = (response: UploadResponse) => {
   if (response.code === 200) {
-    visible.value = false;
+    // visible.value = false;
     ElMessage({
-      message: `成功导入${response.data.success}条数据`,
+      message: response.message, // 直接使用后端返回的信息
       type: "success",
     });
     emit("submit");
@@ -121,7 +123,11 @@ const handleError = (err: Error) => {
 };
 
 const handleClose = () => {
-  formRef.value?.resetFields();
+  // 1. 清空文件列表
+  uploadRef.value?.clearFiles();
+
+  // 2. 关闭弹窗
+  visible.value = false;
 };
 
 // 下载模板

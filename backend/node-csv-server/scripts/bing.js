@@ -10,7 +10,7 @@ const TOKEN_EXPIRES = "2h"; // Token有效期
 
 const bingFilePath = "./data/bing.csv";
 const idPrefix = "ccfe-";
-const globalID_limit = "3000"; // 一次的上传极限是3000
+const globalID_limit = "4000"; // 一次的上传极限是4000
 
 let globalBingList = []; // 当前已配置的词条集合
 let globalIDList = []; // 可用的 id 集合
@@ -412,17 +412,33 @@ async function batchUpload(file) {
     await workbook.xlsx.load(file.buffer); // 替代 readFile(file.buffer)
 
     const worksheet = workbook.getWorksheet(1);
+
     const results = {
       data: [],
       total: 0,
       success: 0,
       errors: [],
     };
+
+    const collection = await readCSV(bingFilePath); // 读取csv文件内容
+    const internalSet = new Set(); // 检查Excel内部重复
+
     // 逐行处理Excel数据
     worksheet.eachRow({ includeEmpty: false }, (row, rowNumber) => {
       if (rowNumber === 1) return; // 跳过表头
-
       results.total++;
+
+      const cellValue = row.getCell(1).value;
+
+      // 1. 优先检测Excel内部重复
+      if (internalSet.has(cellValue)) return;
+      internalSet.add(cellValue); // 记录新值
+
+      // 2. 检查外部CSV重复
+      const hasExist = collection.some(
+        (item) => item.Source === row.getCell(1).value
+      );
+      if (hasExist) return; // 跳过已存在的词条
 
       try {
         const record = {
@@ -454,7 +470,7 @@ async function batchUpload(file) {
     return {
       code: 200,
       data: results,
-      message: `成功导入 ${results.success} 条，失败 ${results.errors.length} 条`,
+      message: `导入 ${results.total} 条数据，去除重复数据，成功导入${results.data.length}条数据，失败 ${results.errors.length} 条数据`,
     };
   } catch (error) {
     throw new Error(`文件处理失败: ${error.message}`);
