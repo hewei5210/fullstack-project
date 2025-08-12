@@ -28,7 +28,7 @@
       </div>
     </el-header>
     <el-container>
-      <el-aside width="200px" style="background: #f5f5f5">
+      <el-aside width="250px" style="background: #f5f5f5">
         <el-menu
           router
           :default-active="$route.path"
@@ -36,28 +36,80 @@
           text-color="#303030"
           :popper-append-to-body="false"
         >
+          <!-- 首页 -->
           <el-menu-item index="/console/home">
-            <el-icon><house /></el-icon>
+            <el-icon><House /></el-icon>
             <span>首页</span>
           </el-menu-item>
-          <el-menu-item index="/console/id">
-            <el-icon><house /></el-icon>
-            <span>翻译项管理</span>
+
+          <!-- 项目国际化 -->
+          <el-sub-menu index="/console/i18n">
+            <template #title>
+              <el-icon><Document /></el-icon>
+              <span>项目国际化</span>
+            </template>
+            <el-menu-item index="/console/i18n/intro">
+              <el-icon><Document /></el-icon>
+              <span>国际化介绍</span>
+            </el-menu-item>
+            <el-menu-item index="/console/i18n/script">
+              <el-icon><Tools /></el-icon>
+              <span>国际化脚本</span>
+            </el-menu-item>
+            <el-menu-item index="/console/i18n/plugin">
+              <el-icon><Connection /></el-icon>
+              <span>国际化插件</span>
+            </el-menu-item>
+            <el-menu-item index="/console/i18n/translation">
+              <el-icon><List /></el-icon>
+              <span>翻译项管理</span>
+            </el-menu-item>
+          </el-sub-menu>
+
+          <!-- 用户管理 -->
+          <el-menu-item index="/console/user">
+            <el-icon><User /></el-icon>
+            <span>用户管理</span>
+          </el-menu-item>
+
+          <!-- 更新日志 -->
+          <el-menu-item index="/console/changelog">
+            <el-icon><Clock /></el-icon>
+            <span>更新日志</span>
           </el-menu-item>
         </el-menu>
       </el-aside>
       <el-main>
-        <router-view />
+        <!-- 面包屑导航 -->
+        <div class="breadcrumb-container">
+          <Breadcrumb />
+        </div>
+        <!-- 页面内容 -->
+        <div class="main-content">
+          <router-view />
+        </div>
       </el-main>
     </el-container>
   </el-container>
 </template>
+
 <script setup lang="ts">
 const username = localStorage.getItem("username");
 
-import { ref } from "vue";
+import { ref, defineAsyncComponent } from "vue";
 import { useRouter } from "vue-router";
-import { SwitchButton } from "@element-plus/icons-vue";
+import { 
+  SwitchButton, 
+  House, 
+  Document, 
+  Tools, 
+  Connection, 
+  List, 
+  User, 
+  Clock 
+} from "@element-plus/icons-vue";
+
+const Breadcrumb = defineAsyncComponent(() => import("./Breadcrumb.vue"));
 
 const router = useRouter();
 const showDropdown = ref(false);
@@ -90,11 +142,14 @@ const handleLogout = () => {
   router.push("/login");
 };
 </script>
+
 <style scoped>
 .common-layout .el-header {
   position: relative;
-  background-color: #f5f7fa;
+  background-color: #fff;
   color: #303030;
+  border-bottom: 1px solid #e4e7ed;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
 }
 
 /* 激活项背景色 */
@@ -117,12 +172,43 @@ const handleLogout = () => {
 :deep(.el-menu-item:hover) {
   background-color: #f0f0f0 !important;
 }
+
+/* 子菜单样式 */
+:deep(.el-sub-menu .el-menu-item) {
+  padding-left: 50px !important;
+}
+
+:deep(.el-sub-menu .el-menu-item .el-icon) {
+  margin-right: 8px;
+}
+
 .common-layout .el-menu {
   border-right: none;
 }
+
+.common-layout .el-aside {
+  border-right: 1px solid #e4e7ed;
+}
+
 .common-layout .el-main {
   padding: 0;
 }
+
+.breadcrumb-container {
+  background: #fff;
+  border-bottom: 1px solid #e4e7ed;
+  padding: 0 20px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+}
+
+.main-content {
+  padding: 20px;
+  background: #f5f7fa;
+  min-height: calc(100vh - 120px);
+}
+
 .common-layout .toolbar {
   display: inline-flex;
   align-items: center;

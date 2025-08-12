@@ -41,7 +41,7 @@
 </template>
 
 <script setup lang="ts">
-import { http } from "../..//../net/http.ts";
+import { http } from "../../../../net/http";
 import { ref, watch } from "vue";
 import { ElMessage } from "element-plus"; // Import ElMessage as a value
 import { UploadFilled } from "@element-plus/icons-vue";
@@ -49,7 +49,7 @@ import type { UploadInstance } from "element-plus";
 
 const uploadRef = ref<UploadInstance>(); // 获取el-upload组件引用
 
-const BASE_URL = import.meta.env.VITE_APP_API_BASE;
+const BASE_URL = "http://localhost:3000";
 
 interface TranslationItem {
   id: string;

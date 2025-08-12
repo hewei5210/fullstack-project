@@ -84,8 +84,8 @@
     </el-table>
     <!-- 分页 -->
     <el-pagination
-      v-model:current-page="currentPage"
-      v-model:page-size="pageSize"
+      :current-page="currentPage"
+      :page-size="pageSize"
       :page-sizes="[10, 20, 50, 100]"
       :size="size"
       :disabled="disabled"
@@ -113,13 +113,13 @@
 </template>
 
 <script lang="ts" setup>
-import { http } from "../../net/http.ts";
-import { ref, onMounted } from "vue";
-import AddId from "./components/addId.vue";
-import AddBatchId from "./components/addBatchId.vue";
-import EditId from "./components/editId.vue";
-import DeleteId from "./components/deleteId.vue";
-import ExportDialog from "./components/exportDialog.vue";
+import { http } from "../../../net/http";
+import { ref, onMounted, defineAsyncComponent } from "vue";
+const AddId = defineAsyncComponent(() => import("./components/addId.vue"));
+const AddBatchId = defineAsyncComponent(() => import("./components/addBatchId.vue"));
+const EditId = defineAsyncComponent(() => import("./components/editId.vue"));
+const DeleteId = defineAsyncComponent(() => import("./components/deleteId.vue"));
+const ExportDialog = defineAsyncComponent(() => import("./components/exportDialog.vue"));
 import { Plus, Download, Upload, Search } from "@element-plus/icons-vue";
 // import { ElMessage } from "element-plus";
 

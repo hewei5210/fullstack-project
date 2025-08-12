@@ -10,14 +10,9 @@ import type {
 } from "axios";
 import { ElMessage } from "element-plus";
 
-// 创建环境变量配置
-// 如何在本地环境，vite会读取.env.development配置文件
-// 如果是生产环境，vite会读取.env.production配置文件
-const BASE_URL = import.meta.env.VITE_APP_API_BASE;
-
 // 创建axios实例
 const service: AxiosInstance = axios.create({
-  baseURL: BASE_URL,
+  baseURL: "http://localhost:3000", // 直接使用后端地址
   withCredentials: true,
   timeout: 10000, // 请求超时时间
   headers: {
@@ -34,11 +29,6 @@ service.interceptors.request.use(
       config.headers!.Authorization = `Bearer ${token}`;
     }
 
-    // 开发环境代理配置（vue.config.js）
-    if (import.meta.env.NODE_ENV === "development") {
-      config.url = `/api${config.url}`;
-    }
-
     return config;
   },
   (error) => {
@@ -49,16 +39,13 @@ service.interceptors.request.use(
 // 响应拦截器
 service.interceptors.response.use(
   (response: AxiosResponse) => {
-    const res = response;
-    // 根据业务状态码处理（示例）
-    // if (res.status !== 200) {
-    //   ElMessage.error(res.message || "Error");
-    //   return Promise.reject(new Error(res.message || "Error"));
-    // }
-    return res;
+    return response;
   },
   (error) => {
-    ElMessage.error(error.response.data.message);
+    console.error("HTTP Error:", error);
+    const message = error.response?.data?.message || error.message || "请求失败";
+    ElMessage.error(message);
+    return Promise.reject(error);
   }
 );
 

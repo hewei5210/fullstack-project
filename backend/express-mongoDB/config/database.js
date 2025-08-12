@@ -4,7 +4,7 @@ require('dotenv').config();
 const connectDB = async () => {
   try {
     const conn = await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/translation_db', {
-      serverSelectionTimeoutMS: 5000, // 5秒超时
+      serverSelectionTimeoutMS: 10000, // 10秒超时
       socketTimeoutMS: 45000, // 45秒超时
     });
     

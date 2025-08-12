@@ -17,7 +17,7 @@
   </template>
   
   <script lang="ts" setup>
-  import { http } from "../../../net/http.ts";
+  import { http } from "../../../../net/http";
   import { ref, watch } from "vue";
   import { ElMessage } from "element-plus";
   

@@ -7,19 +7,57 @@ const routes = [
   },
   {
     path: "/login",
-    component: () => import("@/views/Login.vue"),
+    component: () => import("@/views/login.vue"),
   },
   {
     path: "/console",
     component: () => import("@/components/MainLayout.vue"),
+    meta: { title: "控制台" },
     children: [
       {
         path: "home",
-        component: () => import("@/views/Home.vue"),
+        name: "Home",
+        component: () => import("@/views/home.vue"),
+        meta: { title: "首页" },
       },
+      // 项目国际化相关路由
       {
-        path: "id",
-        component: () => import("@/views/id/index.vue"),
+        path: "i18n",
+        meta: { title: "项目国际化" },
+        children: [
+          {
+            path: "intro",
+            component: () => import("@/views/i18n/introduce.vue"),
+            meta: { title: "国际化介绍" },
+          },
+          {
+            path: "script",
+            component: () => import("@/views/i18n/script.vue"),
+            meta: { title: "国际化脚本" },
+          },
+          {
+            path: "plugin",
+            component: () => import("@/views/i18n/plugin.vue"),
+            meta: { title: "国际化插件" },
+          },
+          {
+            path: "translation",
+            component: () => import("@/views/i18n/translation/index.vue"),
+            meta: { title: "翻译项管理" },
+          },
+        ],
+      },
+      // 用户管理
+      {
+        path: "user",
+        component: () => import("@/views/user/index.vue"),
+        meta: { title: "用户管理" },
+      },
+      // 更新日志
+      {
+        path: "changelog",
+        component: () => import("@/views/changelog/index.vue"),
+        meta: { title: "更新日志" },
       },
     ],
   },

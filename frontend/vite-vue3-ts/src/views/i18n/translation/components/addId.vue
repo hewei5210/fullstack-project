@@ -75,7 +75,7 @@
 </template>
 
 <script setup lang="ts">
-import { http } from "../..//../net/http.ts";
+import { http } from "../../../../net/http";
 import { ref, reactive, watch } from "vue";
 import { ElMessage } from "element-plus"; // Import ElMessage as a value
 import type { FormInstance, FormRules } from "element-plus";
