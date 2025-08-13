@@ -1,68 +1,64 @@
 <template>
-  <el-breadcrumb class="app-breadcrumb" separator="/">
-    <transition-group name="breadcrumb">
-      <el-breadcrumb-item v-for="(item, index) in levelList" :key="item.path">
-        <span
-          v-if="index === levelList.length - 1"
-          class="no-redirect"
-        >
-          {{ item.meta?.title || item.name }}
-        </span>
-        <a v-else @click.prevent="handleLink(item)">
-          {{ item.meta?.title || item.name }}
-        </a>
-      </el-breadcrumb-item>
-    </transition-group>
+  <el-breadcrumb class="app-breadcrumb" separator=">">
+    <el-breadcrumb-item v-for="(item, index) in levelList" :key="index">
+      <span class="no-redirect">
+        {{ item.meta?.title || item.name }}
+      </span>
+    </el-breadcrumb-item>
   </el-breadcrumb>
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import type { RouteLocationMatched } from 'vue-router'
+import { ref, watch } from "vue";
+import { useRoute } from "vue-router";
+import type { RouteLocationMatched } from "vue-router";
 
-const route = useRoute()
-const router = useRouter()
+const route = useRoute();
 
-const levelList = ref<RouteLocationMatched[]>([])
+const levelList = ref<RouteLocationMatched[]>([]);
 
 // 生成面包屑数据
 const getBreadcrumb = () => {
-  let matched = route.matched.filter(item => item.meta && item.meta.title)
-  const first = matched[0]
+  let matched = route.matched.filter((item) => item.meta && item.meta.title);
 
-  if (!isDashboard(first)) {
-    matched = [{ path: '/console/home', meta: { title: '首页' } } as unknown as RouteLocationMatched].concat(matched)
-  }
+  // 只保留侧边栏的一级和二级菜单
+  matched = matched.filter((item) => {
+    const path = item.path;
 
-  levelList.value = matched.filter(item => item.meta && item.meta.title && item.meta.breadcrumb !== false)
-}
+    // 排除控制台根路径
+    if (path === "/console") {
+      return false;
+    }
 
-// 判断是否为首页
-const isDashboard = (route: RouteLocationMatched) => {
-  const name = route && route.name
-  if (!name) {
-    return false
-  }
-  return name.toString().trim().toLocaleLowerCase() === 'Home'.toLocaleLowerCase()
-}
+    // 只保留一级菜单和二级菜单
+    const pathSegments = path.split("/").filter((segment) => segment);
 
-// 处理链接点击
-const handleLink = (item: RouteLocationMatched) => {
-  const { redirect, path } = item
-  if (redirect) {
-    router.push(redirect.toString())
-    return
-  }
-  router.push(path)
-}
+    // 如果是 /console/xxx 格式，只保留 xxx 部分
+    if (pathSegments[0] === "console") {
+      // 一级菜单：/console/home, /console/user, /console/changelog
+      if (pathSegments.length === 2) {
+        return true;
+      }
+      // 二级菜单：/console/i18n/xxx
+      if (pathSegments.length === 3 && pathSegments[1] === "i18n") {
+        return true;
+      }
+    }
+
+    return false;
+  });
+
+  levelList.value = matched.filter(
+    (item) => item.meta && item.meta.title && item.meta.breadcrumb !== false
+  );
+};
 
 // 监听路由变化
 watch(
   () => route.path,
   () => getBreadcrumb(),
   { immediate: true }
-)
+);
 </script>
 
 <style lang="scss" scoped>
@@ -72,24 +68,21 @@ watch(
   line-height: 50px;
   margin-left: 8px;
 
-  .no-redirect {
-    color: #97a8be;
-    cursor: text;
+  :deep(.el-breadcrumb__separator) {
+    color: #64748b;
   }
-}
 
-.breadcrumb-enter-active,
-.breadcrumb-leave-active {
-  transition: all 0.5s;
-}
+  :deep(.el-breadcrumb__item) {
+    .el-breadcrumb__inner {
+      color: #64748b;
+      font-weight: 500;
+    }
+  }
 
-.breadcrumb-enter-from,
-.breadcrumb-leave-active {
-  opacity: 0;
-  transform: translateX(20px);
-}
-
-.breadcrumb-leave-active {
-  position: absolute;
+  .no-redirect {
+    color: #475569;
+    cursor: text;
+    font-weight: 600;
+  }
 }
 </style>

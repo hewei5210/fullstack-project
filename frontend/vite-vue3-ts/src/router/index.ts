@@ -69,7 +69,12 @@ const router = createRouter({
 });
 
 // 全局前置守卫（必须写在导出之前）
-router.beforeEach((to, _, next) => {
+router.beforeEach((to, _from, next) => {
+  // 设置页面标题
+  if (to.meta?.title) {
+    document.title = `${to.meta.title} - 前端工具平台`;
+  }
+
   const isAuthenticated = localStorage.getItem("token");
 
   // 已登录时禁止访问登录页（避免循环）
@@ -77,6 +82,13 @@ router.beforeEach((to, _, next) => {
     next("/console/home"); // 重定向到控制台首页
     return;
   }
+
+  // 检查是否需要登录
+  if (!isAuthenticated && to.path.startsWith("/console")) {
+    next("/login");
+    return;
+  }
+
   next();
 });
 

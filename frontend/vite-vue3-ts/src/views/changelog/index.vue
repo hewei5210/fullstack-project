@@ -1,11 +1,8 @@
 <template>
-  <div class="changelog">
-    <el-card class="changelog-card">
-      <template #header>
-        <div class="card-header">
-          <span>更新日志</span>
-        </div>
-      </template>
+  <div class="container">
+    <div class="card-header">
+      <span>更新日志</span>
+    </div>
       
       <div class="changelog-content">
         <el-timeline>
@@ -61,10 +58,9 @@
               </div>
             </el-card>
           </el-timeline-item>
-        </el-timeline>
-      </div>
-    </el-card>
-  </div>
+                 </el-timeline>
+       </div>
+   </div>
 </template>
 
 <script setup lang="ts">
@@ -73,94 +69,18 @@ import { ref } from 'vue'
 // 版本数据
 const versions = ref([
   {
-    version: '2.0.0',
-    date: '2024-08-12',
-    type: 'major',
-    description: '重大版本更新，重构了整个系统架构，新增多级菜单和国际化管理功能',
-    features: [
-      '新增项目国际化管理模块',
-      '新增国际化介绍、脚本、插件页面',
-      '新增用户管理功能',
-      '新增更新日志页面',
-      '重构菜单结构，支持多级菜单',
-      '优化页面布局和用户体验'
-    ],
-    improvements: [
-      '优化了数据库结构设计',
-      '改进了前端路由配置',
-      '增强了错误处理机制',
-      '提升了系统性能'
-    ],
-    fixes: [
-      '修复了菜单显示问题',
-      '修复了路由跳转异常',
-      '修复了数据同步问题'
-    ],
-    breaking: [
-      '菜单结构发生重大变化',
-      '部分 API 接口路径调整',
-      '数据库字段结构优化'
-    ]
-  },
-  {
-    version: '1.5.0',
-    date: '2024-07-15',
-    type: 'minor',
-    description: '功能增强版本，新增批量操作和导出功能',
-    features: [
-      '新增批量导入翻译功能',
-      '新增 Excel 导出功能',
-      '新增翻译模板下载',
-      '新增搜索和筛选功能'
-    ],
-    improvements: [
-      '优化了翻译项管理界面',
-      '改进了数据验证逻辑',
-      '增强了用户权限控制'
-    ],
-    fixes: [
-      '修复了分页显示问题',
-      '修复了数据更新延迟问题'
-    ]
-  },
-  {
-    version: '1.4.2',
-    date: '2024-06-20',
-    type: 'patch',
-    description: 'Bug 修复版本',
-    fixes: [
-      '修复了登录状态丢失问题',
-      '修复了数据保存失败问题',
-      '修复了界面显示异常'
-    ]
-  },
-  {
-    version: '1.4.0',
-    date: '2024-05-10',
-    type: 'minor',
-    description: '新增翻译项管理功能',
-    features: [
-      '新增翻译项 CRUD 操作',
-      '新增翻译项列表展示',
-      '新增翻译项编辑功能',
-      '新增翻译项删除功能'
-    ],
-    improvements: [
-      '优化了数据库连接配置',
-      '改进了前端组件结构'
-    ]
-  },
-  {
     version: '1.0.0',
-    date: '2024-04-01',
+    date: '2025-08-13',
     type: 'major',
     description: '初始版本发布',
     features: [
-      '基础用户认证系统',
       '基础页面框架',
       'MongoDB 数据库集成',
       'Express.js 后端 API'
-    ]
+    ],
+    improvements: [],
+    fixes: [],
+    breaking: []
   }
 ])
 
@@ -194,19 +114,18 @@ const getTypeText = (type: string) => {
 </script>
 
 <style scoped>
-.changelog {
+.container {
+  margin: 10px;
   padding: 20px;
-}
-
-.changelog-card {
-  max-width: 1000px;
-  margin: 0 auto;
+  background-color: #fff;
+  min-height: 600px;
 }
 
 .card-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  margin-bottom: 20px;
 }
 
 .changelog-content {

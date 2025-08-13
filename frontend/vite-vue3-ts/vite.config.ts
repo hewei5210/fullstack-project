@@ -22,4 +22,24 @@ export default defineConfig({
       resolvers: [ElementPlusResolver()],
     }),
   ],
+  // 性能优化配置
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'element-plus': ['element-plus'],
+          'vue-vendor': ['vue', 'vue-router']
+        }
+      }
+    }
+  },
+  // 开发服务器优化
+  server: {
+    hmr: true,
+    open: false
+  },
+  // 预构建优化
+  optimizeDeps: {
+    include: ['vue', 'vue-router', 'element-plus']
+  }
 });

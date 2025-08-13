@@ -1,5 +1,5 @@
 <template>
-  <div style="margin: 20px 20px 0 20px">
+  <div class="container">
     <!-- 操作按钮组 -->
     <div style="margin-bottom: 20px">
       <el-button type="primary" :icon="Plus" @click="showDialog"
@@ -239,4 +239,11 @@ onMounted(() => {
   getData(); // 页面加载时自动触发
 });
 </script>
-<style scoped></style>
+<style scoped>
+.container {
+  margin: 10px;
+  padding: 20px;
+  background-color: #fff;
+  min-height: 600px;
+}
+</style>

@@ -1,15 +1,7 @@
 <template>
-  <div class="i18n-plugin">
-    <el-card class="plugin-card">
-      <template #header>
-        <div class="card-header">
-          <span>国际化插件</span>
-        </div>
-      </template>
-
-      <div class="plugin-content">
-        <h2>开发框架插件</h2>
-        <p>为各种主流开发框架提供国际化插件，简化集成过程。</p>
+  <div class="container">
+    <h2>开发框架插件</h2>
+    <p>为各种主流开发框架提供国际化插件，简化集成过程。</p>
 
         <el-row :gutter="20">
           <el-col :span="12">
@@ -206,8 +198,6 @@ function MyComponent() {
             </el-tab-pane>
           </el-tabs>
         </div>
-      </div>
-    </el-card>
   </div>
 </template>
 
@@ -229,28 +219,11 @@ const viewDocs = (framework: string) => {
 </script>
 
 <style scoped>
-.i18n-plugin {
+.container {
+  margin: 10px;
   padding: 20px;
-}
-
-.plugin-card {
-  max-width: 1200px;
-  margin: 0 auto;
-}
-
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.plugin-content {
-  line-height: 1.6;
-}
-
-.plugin-content h2 {
-  color: #409eff;
-  margin-bottom: 16px;
+  background-color: #fff;
+  min-height: 600px;
 }
 
 .plugin-item {
