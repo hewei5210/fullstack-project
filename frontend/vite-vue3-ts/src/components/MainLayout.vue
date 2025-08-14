@@ -187,9 +187,6 @@ const clearCloseTimer = () => {
 
 // 菜单选择处理
 const handleMenuSelect = (index: string) => {
-  // 可以在这里添加菜单选择的逻辑，比如埋点统计等
-  console.log('Menu selected:', index);
-  
   // 根据选择的菜单项动态控制展开状态
   if (index.startsWith('/console/i18n/')) {
     // 选择国际化子菜单项，确保父菜单展开
@@ -375,7 +372,7 @@ const handleLogout = () => {
   transform: translateY(-50%);
   width: 24px;
   height: 24px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #afb8f0 0%, #e1ccf8 100%);
   border-radius: 50%;
   display: flex;
   align-items: center;

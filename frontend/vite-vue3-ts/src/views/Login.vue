@@ -34,9 +34,8 @@ const form = reactive({ username: "", password: "" });
 const handleLogin = async () => {
   try {
     const res = await http.post("/api/login", form);
-    console.log("登录成功", res);
     localStorage.setItem("token", res.data.data.token);
-    localStorage.setItem("username", res.data.data.username);
+    localStorage.setItem("username", res.data.data.user.username);
     router.push("/console/home"); // 跳转至后台管理页
   } catch (error) {
     console.error("登录失败", error);

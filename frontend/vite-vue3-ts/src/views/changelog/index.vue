@@ -1,116 +1,143 @@
 <template>
   <div class="container">
-    <div class="card-header">
-      <span>更新日志</span>
-    </div>
-      
-      <div class="changelog-content">
-        <el-timeline>
-          <el-timeline-item
-            v-for="version in versions"
-            :key="version.version"
-            :timestamp="version.date"
-            placement="top"
-            :type="version.type"
-          >
-            <el-card class="version-card">
-              <template #header>
-                <div class="version-header">
-                  <span class="version-title">v{{ version.version }}</span>
-                  <el-tag :type="getTagType(version.type)" size="small">
-                    {{ getTypeText(version.type) }}
-                  </el-tag>
-                </div>
-              </template>
-              
-              <div class="version-content">
-                <div v-if="version.description" class="version-description">
-                  {{ version.description }}
-                </div>
-                
-                <div v-if="version.features && version.features.length > 0" class="change-section">
-                  <h4>✨ 新功能</h4>
-                  <ul>
-                    <li v-for="feature in version.features" :key="feature">{{ feature }}</li>
-                  </ul>
-                </div>
-                
-                <div v-if="version.improvements && version.improvements.length > 0" class="change-section">
-                  <h4>🔧 改进</h4>
-                  <ul>
-                    <li v-for="improvement in version.improvements" :key="improvement">{{ improvement }}</li>
-                  </ul>
-                </div>
-                
-                <div v-if="version.fixes && version.fixes.length > 0" class="change-section">
-                  <h4>🐛 修复</h4>
-                  <ul>
-                    <li v-for="fix in version.fixes" :key="fix">{{ fix }}</li>
-                  </ul>
-                </div>
-                
-                <div v-if="version.breaking && version.breaking.length > 0" class="change-section">
-                  <h4>⚠️ 破坏性变更</h4>
-                  <ul>
-                    <li v-for="breaking in version.breaking" :key="breaking">{{ breaking }}</li>
-                  </ul>
-                </div>
+    <div class="changelog-content">
+      <el-timeline>
+        <el-timeline-item
+          v-for="version in versions"
+          :key="version.version"
+          :timestamp="version.date"
+          placement="top"
+          :type="getTimelineType(version.type)"
+        >
+          <el-card class="version-card">
+            <template #header>
+              <div class="version-header">
+                <span class="version-title">v{{ version.version }}</span>
+                <el-tag :type="getTagType(version.type)" size="small">
+                  {{ getTypeText(version.type) }}
+                </el-tag>
               </div>
-            </el-card>
-          </el-timeline-item>
-                 </el-timeline>
-       </div>
-   </div>
+            </template>
+
+            <div class="version-content">
+              <div v-if="version.description" class="version-description">
+                {{ version.description }}
+              </div>
+
+              <div
+                v-if="version.features && version.features.length > 0"
+                class="change-section"
+              >
+                <h4>✨ 新功能</h4>
+                <ul>
+                  <li v-for="feature in version.features" :key="feature">
+                    {{ feature }}
+                  </li>
+                </ul>
+              </div>
+
+              <div
+                v-if="version.improvements && version.improvements.length > 0"
+                class="change-section"
+              >
+                <h4>🔧 改进</h4>
+                <ul>
+                  <li
+                    v-for="improvement in version.improvements"
+                    :key="improvement"
+                  >
+                    {{ improvement }}
+                  </li>
+                </ul>
+              </div>
+
+              <div
+                v-if="version.fixes && version.fixes.length > 0"
+                class="change-section"
+              >
+                <h4>🐛 修复</h4>
+                <ul>
+                  <li v-for="fix in version.fixes" :key="fix">{{ fix }}</li>
+                </ul>
+              </div>
+
+              <div
+                v-if="version.breaking && version.breaking.length > 0"
+                class="change-section"
+              >
+                <h4>⚠️ 破坏性变更</h4>
+                <ul>
+                  <li v-for="breaking in version.breaking" :key="breaking">
+                    {{ breaking }}
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </el-card>
+        </el-timeline-item>
+      </el-timeline>
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref } from "vue";
 
 // 版本数据
 const versions = ref([
   {
-    version: '1.0.0',
-    date: '2025-08-13',
-    type: 'major',
-    description: '初始版本发布',
-    features: [
-      '基础页面框架',
-      'MongoDB 数据库集成',
-      'Express.js 后端 API'
-    ],
+    version: "1.0.0",
+    date: "2025-08-13",
+    type: "major",
+    description: "初始版本发布",
+    features: ["基础页面框架", "MongoDB 数据库集成", "Express.js 后端 API"],
     improvements: [],
     fixes: [],
-    breaking: []
-  }
-])
+    breaking: [],
+  },
+]);
 
 // 获取标签类型
 const getTagType = (type: string) => {
   switch (type) {
-    case 'major':
-      return 'danger'
-    case 'minor':
-      return 'warning'
-    case 'patch':
-      return 'info'
+    case "major":
+      return "danger";
+    case "minor":
+      return "warning";
+    case "patch":
+      return "info";
     default:
-      return 'info'
+      return "info";
   }
-}
+};
+
+// 获取时间线类型
+const getTimelineType = (type: string) => {
+  switch (type) {
+    case "major":
+      return "danger";
+    case "minor":
+      return "warning";
+    case "patch":
+      return "info";
+    default:
+      return "primary";
+  }
+};
 
 // 获取类型文本
 const getTypeText = (type: string) => {
   switch (type) {
-    case 'major':
-      return '重大更新'
-    case 'minor':
-      return '功能更新'
-    case 'patch':
-      return 'Bug 修复'
+    case "major":
+      return "重大更新";
+    case "minor":
+      return "功能更新";
+    case "patch":
+      return "Bug 修复";
     default:
-      return '更新'
+      return "更新";
   }
-}
+};
 </script>
 
 <style scoped>
@@ -119,13 +146,6 @@ const getTypeText = (type: string) => {
   padding: 20px;
   background-color: #fff;
   min-height: 600px;
-}
-
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
 }
 
 .changelog-content {

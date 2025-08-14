@@ -159,7 +159,37 @@
           <h3>使用示例</h3>
           <el-tabs v-model="activeExample" type="border-card">
             <el-tab-pane label="Vue.js" name="vue">
-              <pre><code>// main.js
+              <pre><code>{{ vueExample }}</code></pre>
+            </el-tab-pane>
+
+            <el-tab-pane label="React" name="react">
+              <pre><code>{{ reactExample }}</code></pre>
+            </el-tab-pane>
+          </el-tabs>
+        </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref } from "vue";
+import { ElMessage } from "element-plus";
+import { 
+  Platform, 
+  Connection, 
+  Monitor,
+  Setting
+} from "@element-plus/icons-vue";
+
+// 使用 Element Plus 内置图标作为替代
+const VueIcon = Platform;
+const ReactIcon = Connection;
+const AngularIcon = Monitor;
+const NodeIcon = Setting;
+
+const activeExample = ref("vue");
+
+// 代码示例
+const vueExample = `// main.js
 import { createApp } from 'vue'
 import { createI18n } from 'vue-i18n'
 import i18nHelper from 'vue-i18n-helper'
@@ -175,37 +205,24 @@ const i18n = createI18n({
 
 app.use(i18n)
 app.use(i18nHelper)
-app.mount('#app')</code></pre>
-            </el-tab-pane>
+app.mount('#app')`;
 
-            <el-tab-pane label="React" name="react">
-              <pre><code>// App.jsx
+const reactExample = `// App.jsx
 import { I18nProvider } from 'react-i18n-toolkit'
 import { useTranslation } from 'react-i18n-toolkit'
 
 function App() {
   return (
-    &lt;I18nProvider locale="zh-CN"&gt;
-      &lt;MyComponent /&gt;
-    &lt;/I18nProvider&gt;
+    <I18nProvider locale="zh-CN">
+      <MyComponent />
+    </I18nProvider>
   )
 }
 
 function MyComponent() {
   const { t } = useTranslation()
-  return &lt;div&gt;{t('hello.world')}&lt;/div&gt;
-}</code></pre>
-            </el-tab-pane>
-          </el-tabs>
-        </div>
-  </div>
-</template>
-
-<script setup lang="ts">
-import { ref } from "vue";
-import { ElMessage } from "element-plus";
-
-const activeExample = ref("vue");
+  return <div>{t('hello.world')}</div>
+}`;
 
 const installPlugin = (framework: string) => {
   console.log(`安装 ${framework} 插件`);

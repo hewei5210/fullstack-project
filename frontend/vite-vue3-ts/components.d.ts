@@ -43,9 +43,7 @@ declare module 'vue' {
     ElTimelineItem: typeof import('element-plus/es')['ElTimelineItem']
     ElUpload: typeof import('element-plus/es')['ElUpload']
     MainLayout: typeof import('./src/components/MainLayout.vue')['default']
-    PageHeader: typeof import('./src/components/PageHeader.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
-    SearchFilter: typeof import('./src/components/SearchFilter.vue')['default']
   }
 }

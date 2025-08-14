@@ -18,7 +18,7 @@
         :icon="Download"
         @click="exportDialog"
         style="margin-left: 10px"
-        >导出数据</el-button
+        >导出JSON文件</el-button
       >
       <el-input
         v-model="searchContent"
