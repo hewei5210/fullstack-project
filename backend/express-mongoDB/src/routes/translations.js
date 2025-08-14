@@ -44,24 +44,6 @@ router.get('/search', async (req, res) => {
   }
 });
 
-// 申请新ID
-router.get('/applyId', async (req, res) => {
-  try {
-    const newId = await translationService.generateNewId();
-    res.status(200).json({
-      status: 200,
-      message: 'success',
-      data: newId
-    });
-  } catch (error) {
-    res.status(400).json({
-      status: 400,
-      message: error.message,
-      data: ''
-    });
-  }
-});
-
 // 添加翻译项
 router.post('/addBing', async (req, res) => {
   try {
@@ -130,8 +112,8 @@ router.post('/batchUpload', upload.single('file'), async (req, res) => {
     const result = await translationService.batchImport(req.file.buffer);
     res.status(200).json({
       status: 200,
-      message: 'success',
-      data: result
+      message: result.message,
+      data: result.data
     });
   } catch (error) {
     res.status(400).json({
@@ -146,13 +128,38 @@ router.post('/batchUpload', upload.single('file'), async (req, res) => {
 router.get('/exportBing', async (req, res) => {
   try {
     const { langType = 'zh-CN' } = req.query;
-    const workbook = await translationService.exportData(langType);
     
-    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-    res.setHeader('Content-Disposition', `attachment; filename=translations_${langType}.xlsx`);
+    const fileInfo = await translationService.exportJsonData(langType);
     
-    await workbook.xlsx.write(res);
-    res.end();
+    // 检查文件是否存在
+    const fs = require('fs');
+    if (!fs.existsSync(fileInfo.filePath)) {
+      throw new Error('导出文件不存在');
+    }
+    
+    // 读取文件内容
+    const fileContent = fs.readFileSync(fileInfo.filePath, 'utf8');
+    
+    // 设置响应头
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="${fileInfo.fileName}"`);
+    res.setHeader('Content-Length', Buffer.byteLength(fileContent, 'utf8'));
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Pragma', 'no-cache');
+    
+    // 发送文件内容
+    res.send(fileContent);
+    
+    
+    // 清理临时文件
+    setTimeout(() => {
+      try {
+        fileInfo.done();
+      } catch (error) {
+        console.error('清理临时文件失败:', error);
+      }
+    }, 2000); // 增加延迟时间
+    
   } catch (error) {
     res.status(400).json({
       status: 400,

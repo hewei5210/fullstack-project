@@ -2,7 +2,7 @@
   <el-dialog
     v-model="visible"
     title="批量新增翻译项"
-    width="30%"
+    width="50%"
     @close="handleClose"
   >
     <el-upload
@@ -13,7 +13,8 @@
       :on-success="handleSuccess"
       :on-error="handleError"
       drag
-      :action="`${BASE_URL}/api/batchUpload/translationItem`"
+      :action="`${BASE_URL}/api/batchUpload`"
+      :headers="uploadHeaders"
       multiple
     >
       <el-icon class="el-icon--upload"><upload-filled /></el-icon>
@@ -33,6 +34,25 @@
         </div>
       </template>
     </el-upload>
+
+    <!-- 显示上传结果 -->
+    <div v-if="uploadResult" class="upload-result">
+      <el-divider content-position="left">上传结果</el-divider>
+      <el-alert
+        :title="uploadResult.message"
+        :type="uploadResult.success > 0 ? 'success' : 'error'"
+        show-icon
+        :closable="false"
+      />
+      
+      <div v-if="uploadResult.errors && uploadResult.errors.length > 0" class="error-list">
+        <h4>错误详情：</h4>
+        <el-table :data="uploadResult.errors" size="small" max-height="200">
+          <el-table-column prop="row" label="行号" width="80" />
+          <el-table-column prop="message" label="错误信息" />
+        </el-table>
+      </div>
+    </div>
 
     <template #footer>
       <el-button @click="handleClose">关闭</el-button>
@@ -69,6 +89,12 @@ const props = defineProps<{
 const emit = defineEmits(["update:modelValue", "submit"]);
 
 const visible = ref(props.modelValue);
+const uploadResult = ref<any>(null);
+
+// 上传请求头
+const uploadHeaders = {
+  'Authorization': `Bearer ${localStorage.getItem('token')}`
+};
 
 // 同步 v-model 状态
 watch(
@@ -87,8 +113,9 @@ declare global {
 }
 const beforeUpload = (file: File) => {
   const isExcel = [".xls", ".xlsx"].some((ext) => file.name.endsWith(ext));
-  if (!isExcel) {
-    ElMessage.error("仅支持Excel文件");
+  const isCSV = file.name.endsWith(".csv");
+  if (!isExcel && !isCSV) {
+    ElMessage.error("仅支持Excel文件(.xls/.xlsx)和CSV文件(.csv)");
     return false;
   }
   return true;
@@ -96,20 +123,21 @@ const beforeUpload = (file: File) => {
 
 // 可选：定义响应体类型
 interface UploadResponse {
-  code: number;
+  status: number;
   data: {
     success: number;
+    total: number;
     errors?: Array<{ row: number; message: string }>;
   };
   message: string;
 }
 // 处理成功响应
 const handleSuccess = (response: UploadResponse) => {
-  if (response.code === 200) {
-    // visible.value = false;
+  if (response.status === 200) {
+    uploadResult.value = response.data;
     ElMessage({
-      message: response.message, // 直接使用后端返回的信息
-      type: "success",
+      message: response.message,
+      type: response.data.success > 0 ? "success" : "warning",
     });
     emit("submit");
   } else {
@@ -126,7 +154,10 @@ const handleClose = () => {
   // 1. 清空文件列表
   uploadRef.value?.clearFiles();
 
-  // 2. 关闭弹窗
+  // 2. 清空上传结果
+  uploadResult.value = null;
+
+  // 3. 关闭弹窗
   visible.value = false;
 };
 
@@ -153,5 +184,18 @@ const downloadTemplate = async () => {
   display: flex;
   align-items: center;
   width: 100%;
+}
+
+.upload-result {
+  margin-top: 20px;
+}
+
+.error-list {
+  margin-top: 15px;
+}
+
+.error-list h4 {
+  margin: 10px 0;
+  color: #f56c6c;
 }
 </style>

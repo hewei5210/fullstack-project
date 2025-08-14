@@ -52,18 +52,43 @@ const handleExport = () => {
     return;
   }
 
-  // 创建隐藏的 iframe
-  const iframe = document.createElement("iframe");
-  iframe.style.display = "none";
-  iframe.src = `${BASE_URL}/api/exportBing?lang=${selectedLang.value}`;
-  document.body.appendChild(iframe);
+  // 使用 fetch 方式下载文件
+  const token = localStorage.getItem('token');
+  if (!token) {
+    ElMessage.error("请先登录");
+    return;
+  }
 
-  setTimeout(() => {
-    document.body.removeChild(iframe);
+  fetch(`${BASE_URL}/api/exportBing?langType=${selectedLang.value}`, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+    },
+  })
+  .then(response => {
+    if (!response.ok) {
+      throw new Error('导出失败');
+    }
+    return response.blob();
+  })
+  .then(blob => {
+    // 创建下载链接
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.style.display = 'none';
+    a.href = url;
+    a.download = `${selectedLang.value}.json`;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
     visible.value = false;
+    ElMessage.success(`${selectedLang.value}.json文件导出成功`);
     selectedLang.value = "zh-CN"; // 重置选择
-    ElMessage.success("导出成功");
-  }, 1000);
+  })
+  .catch(() => {
+    ElMessage.error("导出json文件失败");
+  });
 };
 </script>
 

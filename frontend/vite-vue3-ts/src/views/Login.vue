@@ -27,18 +27,35 @@
 import { reactive } from "vue";
 import { useRouter } from "vue-router";
 import { http } from "@/net/http";
+import tokenManager from "@/utils/tokenManager";
+import { ElMessage } from "element-plus";
 
 const router = useRouter();
 const form = reactive({ username: "", password: "" });
 
 const handleLogin = async () => {
   try {
+    // 验证表单
+    if (!form.username || !form.password) {
+      ElMessage.error("请输入用户名和密码");
+      return;
+    }
+
     const res = await http.post("/api/login", form);
-    localStorage.setItem("token", res.data.data.token);
-    localStorage.setItem("username", res.data.data.user.username);
+    
+    // 使用tokenManager存储token和刷新token
+    tokenManager.setTokens({
+      token: res.data.data.token,
+      refreshToken: res.data.data.refreshToken,
+      user: res.data.data.user
+    });
+    
+    ElMessage.success("登录成功");
     router.push("/console/home"); // 跳转至后台管理页
   } catch (error) {
     console.error("登录失败", error);
+    const errorMessage = error.response?.data?.message || "登录失败，请检查用户名和密码";
+    ElMessage.error(errorMessage);
   }
 };
 </script>

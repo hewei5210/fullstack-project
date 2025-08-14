@@ -45,13 +45,17 @@ class TranslationService {
 
   // 添加翻译项
   async add(translationData) {
-    const { id, source, target } = translationData;
+    const { source, target } = translationData;
     
-    // 检查ID是否已存在
-    const existing = await Translation.findOne({ id });
-    if (existing) {
-      throw new Error('翻译项ID已存在');
+    // 检查翻译项是否已存在
+    const existingTranslation = await Translation.findOne({ source });
+    if (existingTranslation) {
+      throw new Error('翻译项已存在，无法重复添加');
     }
+    
+    // 自动生成新ID
+    const id = await this.generateNewId();
+    console.log('新生成的id', id);
     
     const translation = new Translation({
       id,
@@ -88,16 +92,33 @@ class TranslationService {
     return translation;
   }
 
-  // 生成新ID
+  // 生成新ID - 寻找空缺的ID
   async generateNewId() {
-    const lastTranslation = await Translation.findOne().sort({ id: -1 });
+    // 获取所有翻译项，按ID排序
+    const translations = await Translation.find().sort({ id: 1 });
     
-    if (!lastTranslation) {
-      return 'ccfe-1';
+    if (translations.length === 0) {
+      return 'ccfe-000000001';
     }
     
-    const lastNumber = parseInt(lastTranslation.id.split('-')[1]);
-    return `ccfe-${lastNumber + 1}`;
+    // 提取所有ID的数字部分
+    const existingNumbers = translations.map(item => {
+      const match = item.id.match(/ccfe-(\d+)/);
+      return match ? parseInt(match[1]) : 0;
+    }).filter(num => num > 0).sort((a, b) => a - b);
+    
+    // 寻找第一个空缺的数字
+    let expectedNumber = 1;
+    for (const num of existingNumbers) {
+      if (num > expectedNumber) {
+        // 找到了空缺
+        break;
+      }
+      expectedNumber = num + 1;
+    }
+    
+    // 格式化ID，确保9位数字格式
+    return `ccfe-${expectedNumber.toString().padStart(9, '0')}`;
   }
 
   // 批量导入
@@ -112,71 +133,141 @@ class TranslationService {
       throw new Error('CSV文件格式错误');
     }
 
-    const translations = [];
-    for (const row of parsedData.data) {
-      const translation = new Translation({
-        id: row.id,
-        source: row.Source,
-        target: {
-          'zh-CN': row['target(zh-CN)'],
-          'zh-HK': row['target(zh-HK)'],
-          'en-US': row['target(en-US)']
+    const results = {
+      data: [],
+      total: 0,
+      success: 0,
+      errors: []
+    };
+
+    // 获取现有翻译项用于去重检查
+    const existingTranslations = await Translation.find();
+    const existingSources = new Set(existingTranslations.map(item => item.source));
+    const internalSet = new Set(); // 检查CSV内部重复
+
+    for (let i = 0; i < parsedData.data.length; i++) {
+      const row = parsedData.data[i];
+      results.total++;
+
+      const cellValue = row.Source || row['翻译项'];
+
+      // 1. 优先检测CSV内部重复
+      if (internalSet.has(cellValue)) {
+        results.errors.push({
+          row: i + 2, // +2 因为跳过表头且数组从0开始
+          message: 'CSV内部重复'
+        });
+        continue;
+      }
+      internalSet.add(cellValue);
+
+      // 2. 检查数据库中是否已存在
+      if (existingSources.has(cellValue)) {
+        results.errors.push({
+          row: i + 2,
+          message: '翻译项已存在，无法重复添加'
+        });
+        continue;
+      }
+
+      try {
+        // 自动生成新ID
+        const id = await this.generateNewId();
+        
+        const translation = new Translation({
+          id,
+          source: cellValue,
+          target: {
+            'zh-CN': cellValue,
+            'en-US': row['翻译项-英文'] || row['target(en-US)'] || '',
+            'zh-HK': row['翻译项-繁体'] || row['target(zh-HK)'] || ''
+          }
+        });
+
+        // 数据校验
+        if (!translation.id || !translation.source || !translation.target['zh-CN']) {
+          throw new Error('必填字段缺失');
         }
-      });
-      translations.push(translation);
+
+        results.data.push(translation);
+        results.success++;
+      } catch (error) {
+        results.errors.push({
+          row: i + 2,
+          message: error.message
+        });
+      }
     }
 
-    return await Translation.insertMany(translations, { ordered: false });
+    // 批量插入成功的数据
+    if (results.data.length > 0) {
+      await Translation.insertMany(results.data, { ordered: false });
+    }
+
+    return {
+      code: 200,
+      data: results,
+      message: `导入 ${results.total} 条数据，去除重复数据，成功导入${results.data.length}条数据，失败 ${results.errors.length} 条数据`
+    };
   }
 
-  // 导出数据
-  async exportData(langType = 'zh-CN') {
+  // 导出Json数据
+  async exportJsonData(langType = 'zh-CN') {
+    const fs = require('fs');
+    const path = require('path');
+    
     const translations = await Translation.find().sort('id');
     
-    const workbook = new ExcelJS.Workbook();
-    const worksheet = workbook.addWorksheet('Translations');
-    
-    // 设置表头
-    worksheet.columns = [
-      { header: 'ID', key: 'id', width: 15 },
-      { header: 'Source', key: 'source', width: 30 },
-      { header: `Target(${langType})`, key: 'target', width: 40 }
-    ];
-    
-    // 添加数据
-    translations.forEach(item => {
-      worksheet.addRow({
-        id: item.id,
-        source: item.source,
-        target: item.target[langType]
+    let jsonData = {};
+
+    if (langType === "zh-CN" || langType === "zh-HK" || langType === "en-US") {
+      translations.forEach((item) => {
+        jsonData[item.id] = item.target[langType];
       });
-    });
-    
-    return workbook;
+    }
+
+    const fileName = `${langType}.json`;
+    // 使用绝对路径，确保文件创建在正确位置
+    const filePath = path.join(process.cwd(), "exports", fileName);
+    const jsonContent = JSON.stringify(jsonData, null, 2);
+
+
+    // 确保导出目录存在
+    if (!fs.existsSync(path.dirname(filePath))) {
+      fs.mkdirSync(path.dirname(filePath), { recursive: true });
+    }
+
+    // 写入文件
+    fs.writeFileSync(filePath, jsonContent);
+    console.log('文件写入成功:', filePath);
+
+    return {
+      filePath,
+      fileName,
+      done: () => {
+        try {
+          if (fs.existsSync(filePath)) {
+            fs.unlinkSync(filePath);
+            console.log('临时文件清理成功:', filePath);
+          }
+        } catch (error) {
+          console.error('清理临时文件失败:', error);
+        }
+      },
+    };
   }
 
   // 下载模板
-  async downloadTemplate() {
+  downloadTemplate() {
     const workbook = new ExcelJS.Workbook();
-    const worksheet = workbook.addWorksheet('Template');
+    const worksheet = workbook.addWorksheet('翻译模板');
     
     // 设置表头
     worksheet.columns = [
-      { header: 'id', key: 'id', width: 15 },
-      { header: 'Source', key: 'source', width: 30 },
-      { header: 'target(zh-CN)', key: 'zhCN', width: 40 },
-      { header: 'target(zh-HK)', key: 'zhHK', width: 40 },
-      { header: 'target(en-US)', key: 'enUS', width: 40 }
+      { header: "翻译项", key: "zh-CN", width: 30 },
+      { header: "翻译项-英文", key: "en-US", width: 30 },
+      { header: "翻译项-繁体", key: "zh-HK", width: 30 },
     ];
-    
-    // 添加示例数据
-    worksheet.addRow({
-      id: 'ccfe-1',
-      source: 'Hello',
-      zhCN: '你好',
-      zhHK: '你好',
-      enUS: 'Hello'
-    });
     
     return workbook;
   }

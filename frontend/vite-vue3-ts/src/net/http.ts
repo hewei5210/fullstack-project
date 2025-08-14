@@ -9,6 +9,7 @@ import type {
   AxiosResponse,
 } from "axios";
 import { ElMessage } from "element-plus";
+import tokenManager from "../utils/tokenManager";
 
 // 创建axios实例
 const service: AxiosInstance = axios.create({
@@ -22,11 +23,23 @@ const service: AxiosInstance = axios.create({
 
 // 请求拦截器
 service.interceptors.request.use(
-  (config: InternalAxiosRequestConfig) => {
-    // 添加全局token（示例）
-    const token = localStorage.getItem("token");
-    if (token) {
-      config.headers!.Authorization = `Bearer ${token}`;
+  async (config: InternalAxiosRequestConfig) => {
+    // 对于登录和刷新token的请求，不需要添加Authorization头
+    if (config.url?.includes('/login') || config.url?.includes('/refresh')) {
+      return config;
+    }
+
+    try {
+      // 获取有效的token（如果即将过期则自动刷新）
+      const token = await tokenManager.getValidToken();
+      if (token) {
+        config.headers!.Authorization = `Bearer ${token}`;
+      }
+    } catch (error) {
+      console.error('Token获取失败:', error);
+      // 如果获取token失败，清除token并跳转到登录页
+      tokenManager.clearTokens();
+      window.location.href = '/login';
     }
 
     return config;
@@ -41,7 +54,30 @@ service.interceptors.response.use(
   (response: AxiosResponse) => {
     return response;
   },
-  (error) => {
+  async (error) => {
+    const originalRequest = error.config;
+    
+    // 如果是401错误且不是刷新token的请求，尝试刷新token
+    if (error.response?.status === 401 && !originalRequest._retry && !originalRequest.url?.includes('/refresh')) {
+      originalRequest._retry = true;
+      
+      try {
+        // 尝试刷新token
+        await tokenManager.refreshToken();
+        
+        // 重新发送原始请求
+        const newToken = await tokenManager.getValidToken();
+        originalRequest.headers.Authorization = `Bearer ${newToken}`;
+        
+        return service(originalRequest);
+      } catch (refreshError) {
+        // 刷新失败，清除token并跳转到登录页
+        tokenManager.clearTokens();
+        window.location.href = '/login';
+        return Promise.reject(refreshError);
+      }
+    }
+    
     console.error("HTTP Error:", error);
     const message = error.response?.data?.message || error.message || "请求失败";
     ElMessage.error(message);

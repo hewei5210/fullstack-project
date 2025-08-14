@@ -12,27 +12,6 @@
       label-width="120px"
       label-position="right"
     >
-      <el-form-item label="翻译项ID" prop="id">
-        <div class="inline-container">
-          <el-input
-            v-model="formData.id"
-            placeholder="请生成翻译项ID"
-            style="flex: 1; margin-right: 12px"
-            clearable
-            disabled
-          />
-          <el-button
-            type="primary"
-            link
-            plain
-            size="small"
-            @click="generateId"
-            :icon="RefreshRight"
-          >
-            生成ID
-          </el-button>
-        </div>
-      </el-form-item>
       <el-form-item label="翻译项" prop="source">
         <el-input
           v-model="formData.source"
@@ -79,7 +58,6 @@ import { http } from "../../../../net/http";
 import { ref, reactive, watch } from "vue";
 import { ElMessage } from "element-plus"; // Import ElMessage as a value
 import type { FormInstance, FormRules } from "element-plus";
-import { RefreshRight } from "@element-plus/icons-vue";
 
 interface TranslationItem {
   id: string;
@@ -112,7 +90,6 @@ const formData = reactive<TranslationItem>({
 });
 
 const rules = reactive<FormRules>({
-  id: [{ required: true, message: "ID不能为空", trigger: "blur" }],
   source: [{ required: true, message: "翻译项不能为空", trigger: "blur" }],
 });
 
@@ -128,7 +105,6 @@ const handleSubmit = async () => {
     await formRef.value?.validate();
     http
       .post("/api/addBing", {
-        id: formData.id,
         source: formData.source,
         target: formData.target,
       })
@@ -138,8 +114,10 @@ const handleSubmit = async () => {
           emit("submit", formData);
           visible.value = false;
         },
-        () => {
-          ElMessage.error("添加失败");
+        (error) => {
+          // 显示具体的错误信息
+          const errorMessage = error.response?.data?.message || "添加失败";
+          ElMessage.error(errorMessage);
         }
       );
   } catch (error) {
@@ -149,12 +127,6 @@ const handleSubmit = async () => {
 
 const handleClose = () => {
   formRef.value?.resetFields();
-};
-
-const generateId = () => {
-  http.get("/api/applyId").then((res) => {
-    formData.id = res.data.data;
-  });
 };
 </script>
 <style scoped>
