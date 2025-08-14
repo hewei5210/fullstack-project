@@ -129,8 +129,13 @@ import tokenManager from "@/utils/tokenManager";
 
 // 获取用户名
 const username = computed(() => {
-  const user = tokenManager.getUser();
-  return user?.username || '';
+  try {
+    const user = tokenManager.getUser();
+    return user?.username || '';
+  } catch (error) {
+    console.error('获取用户名失败:', error);
+    return '';
+  }
 });
 
 // 使用异步组件，添加加载和错误处理

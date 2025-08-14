@@ -124,6 +124,87 @@ router.post('/batchUpload', upload.single('file'), async (req, res) => {
   }
 });
 
+// 批量修改
+router.post('/batchUpdate', upload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({
+        status: 400,
+        message: '请上传文件',
+        data: ''
+      });
+    }
+
+    const result = await translationService.batchUpdate(req.file.buffer);
+    res.status(200).json({
+      status: 200,
+      message: result.message,
+      data: result.data
+    });
+  } catch (error) {
+    res.status(400).json({
+      status: 400,
+      message: error.message,
+      data: ''
+    });
+  }
+});
+
+// 批量获取翻译项ID
+router.post('/batchGetIds', upload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({
+        status: 400,
+        message: '请上传文件',
+        data: ''
+      });
+    }
+
+    const result = await translationService.batchGetIds(req.file.buffer);
+    res.status(200).json({
+      status: 200,
+      message: result.message,
+      data: result.data
+    });
+  } catch (error) {
+    res.status(400).json({
+      status: 400,
+      message: error.message,
+      data: ''
+    });
+  }
+});
+
+// 导出批量获取ID结果
+router.post('/exportGetIdsResult', async (req, res) => {
+  try {
+    const { data } = req.body;
+    
+    if (!data || !Array.isArray(data)) {
+      return res.status(400).json({
+        status: 400,
+        message: '数据格式错误',
+        data: ''
+      });
+    }
+
+    const workbook = await translationService.exportGetIdsResult(data);
+    
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', 'attachment; filename=translation_ids_result.xlsx');
+    
+    await workbook.xlsx.write(res);
+    res.end();
+  } catch (error) {
+    res.status(400).json({
+      status: 400,
+      message: error.message,
+      data: ''
+    });
+  }
+});
+
 // 导出数据
 router.get('/exportBing', async (req, res) => {
   try {
@@ -176,6 +257,44 @@ router.get('/downloadTemplate', async (req, res) => {
     
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     res.setHeader('Content-Disposition', 'attachment; filename=translation_template.xlsx');
+    
+    await workbook.xlsx.write(res);
+    res.end();
+  } catch (error) {
+    res.status(400).json({
+      status: 400,
+      message: error.message,
+      data: ''
+    });
+  }
+});
+
+// 下载批量修改模板
+router.get('/downloadUpdateTemplate', async (req, res) => {
+  try {
+    const workbook = await translationService.downloadUpdateTemplate();
+    
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', 'attachment; filename=translation_update_template.xlsx');
+    
+    await workbook.xlsx.write(res);
+    res.end();
+  } catch (error) {
+    res.status(400).json({
+      status: 400,
+      message: error.message,
+      data: ''
+    });
+  }
+});
+
+// 下载批量获取ID模板
+router.get('/downloadGetIdsTemplate', async (req, res) => {
+  try {
+    const workbook = await translationService.downloadGetIdsTemplate();
+    
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', 'attachment; filename=translation_get_ids_template.xlsx');
     
     await workbook.xlsx.write(res);
     res.end();

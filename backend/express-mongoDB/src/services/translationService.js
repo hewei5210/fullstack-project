@@ -272,6 +272,231 @@ class TranslationService {
     return workbook;
   }
 
+  // 下载批量修改模板
+  downloadUpdateTemplate() {
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('批量修改模板');
+    
+    // 设置表头 - 包含翻译项ID
+    worksheet.columns = [
+      { header: "翻译项ID", key: "id", width: 20 },
+      { header: "翻译项", key: "zh-CN", width: 30 },
+      { header: "翻译项-英文", key: "en-US", width: 30 },
+      { header: "翻译项-繁体", key: "zh-HK", width: 30 },
+    ];
+    
+    return workbook;
+  }
+
+  // 批量修改
+  async batchUpdate(fileBuffer) {
+    const csvData = fileBuffer.toString('utf8');
+    const parsedData = Papa.parse(csvData, {
+      header: true,
+      skipEmptyLines: true
+    });
+
+    if (parsedData.errors.length > 0) {
+      throw new Error('CSV文件格式错误');
+    }
+
+    const results = {
+      total: 0,
+      success: 0,
+      errors: []
+    };
+
+    // 获取所有现有翻译项的ID用于验证
+    const existingTranslations = await Translation.find();
+    const existingIds = new Set(existingTranslations.map(item => item.id));
+
+    for (let i = 0; i < parsedData.data.length; i++) {
+      const row = parsedData.data[i];
+      results.total++;
+
+      const translationId = row.ID || row['翻译项ID'];
+      const source = row.Source || row['翻译项'];
+
+      // 检查翻译项ID是否存在
+      if (!translationId) {
+        results.errors.push({
+          row: i + 2,
+          message: '翻译项ID不能为空'
+        });
+        continue;
+      }
+
+      if (!existingIds.has(translationId)) {
+        results.errors.push({
+          row: i + 2,
+          message: `翻译项ID "${translationId}" 不存在`
+        });
+        continue;
+      }
+
+      try {
+        // 构建更新数据
+        const updateData = {
+          source: source || '',
+          target: {
+            'zh-CN': source || '',
+            'en-US': row['翻译项-英文'] || row['target(en-US)'] || '',
+            'zh-HK': row['翻译项-繁体'] || row['target(zh-HK)'] || ''
+          }
+        };
+
+        // 数据校验
+        if (!updateData.source) {
+          throw new Error('翻译项内容不能为空');
+        }
+
+        // 执行更新
+        const updatedTranslation = await Translation.findOneAndUpdate(
+          { id: translationId },
+          updateData,
+          { new: true, runValidators: true }
+        );
+
+        if (!updatedTranslation) {
+          throw new Error('更新失败');
+        }
+
+        results.success++;
+      } catch (error) {
+        results.errors.push({
+          row: i + 2,
+          message: error.message
+        });
+      }
+    }
+
+    return {
+      code: 200,
+      data: results,
+      message: `批量修改 ${results.total} 条数据，成功修改 ${results.success} 条数据，失败 ${results.errors.length} 条数据`
+    };
+  }
+
+  // 批量获取翻译项ID
+  async batchGetIds(fileBuffer) {
+    const csvData = fileBuffer.toString('utf8');
+    const parsedData = Papa.parse(csvData, {
+      header: true,
+      skipEmptyLines: true
+    });
+
+    if (parsedData.errors.length > 0) {
+      throw new Error('CSV文件格式错误');
+    }
+
+    const results = {
+      total: 0,
+      success: 0,
+      errors: [],
+      data: []
+    };
+
+    for (let i = 0; i < parsedData.data.length; i++) {
+      const row = parsedData.data[i];
+      results.total++;
+
+      const source = row.Source || row['翻译项'];
+
+      // 检查翻译项是否为空
+      if (!source) {
+        results.errors.push({
+          row: i + 2,
+          message: '翻译项不能为空'
+        });
+        continue;
+      }
+
+      try {
+        // 在数据库中搜索翻译项
+        const translation = await Translation.findOne({ source: source });
+        
+        if (!translation) {
+          results.errors.push({
+            row: i + 2,
+            message: `翻译项 "${source}" 在数据库中不存在`
+          });
+          continue;
+        }
+
+        // 构建结果数据
+        const resultItem = {
+          id: translation.id,
+          source: translation.source,
+          'en-US': translation.target['en-US'] || '',
+          'zh-HK': translation.target['zh-HK'] || ''
+        };
+
+        results.data.push(resultItem);
+        results.success++;
+      } catch (error) {
+        results.errors.push({
+          row: i + 2,
+          message: error.message
+        });
+      }
+    }
+
+    return {
+      code: 200,
+      data: results,
+      message: `批量获取 ${results.total} 条数据，成功获取 ${results.success} 条数据，失败 ${results.errors.length} 条数据`
+    };
+  }
+
+  // 下载批量获取ID模板
+  downloadGetIdsTemplate() {
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('批量获取ID模板');
+    
+    // 设置表头 - 只需要翻译项，其他可选
+    worksheet.columns = [
+      { header: "翻译项", key: "zh-CN", width: 30 },
+      { header: "翻译项-英文", key: "en-US", width: 30 },
+      { header: "翻译项-繁体", key: "zh-HK", width: 30 },
+    ];
+    
+    return workbook;
+  }
+
+  // 导出批量获取ID结果
+  async exportGetIdsResult(data) {
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('翻译项ID结果');
+    
+    // 设置表头
+    worksheet.columns = [
+      { header: "翻译项ID", key: "id", width: 20 },
+      { header: "翻译项", key: "zh-CN", width: 30 },
+      { header: "翻译项-英文", key: "en-US", width: 30 },
+      { header: "翻译项-繁体", key: "zh-HK", width: 30 },
+    ];
+    
+    // 添加数据行
+    data.forEach(item => {
+      worksheet.addRow({
+        id: item.id,
+        'zh-CN': item.source,
+        'en-US': item['en-US'],
+        'zh-HK': item['zh-HK']
+      });
+    });
+    
+    // 设置表头样式
+    worksheet.getRow(1).font = { bold: true };
+    worksheet.getRow(1).fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FFE0E0E0' }
+    };
+    
+    return workbook;
+  }
+
   // 导出EXCEL数据
   async exportExcelData(includeId = false) {
     const translations = await Translation.find().sort('id');

@@ -13,7 +13,12 @@ class TokenManager {
   setTokens(tokenData: TokenData) {
     localStorage.setItem('token', tokenData.token);
     localStorage.setItem('refreshToken', tokenData.refreshToken);
-    localStorage.setItem('user', JSON.stringify(tokenData.user));
+    // 确保用户信息不为空再存储
+    if (tokenData.user) {
+      localStorage.setItem('user', JSON.stringify(tokenData.user));
+    } else {
+      localStorage.removeItem('user');
+    }
   }
 
   // 获取访问token
@@ -29,7 +34,15 @@ class TokenManager {
   // 获取用户信息
   getUser(): any {
     const userStr = localStorage.getItem('user');
-    return userStr ? JSON.parse(userStr) : null;
+    if (!userStr || userStr === 'undefined' || userStr === 'null') {
+      return null;
+    }
+    try {
+      return JSON.parse(userStr);
+    } catch (error) {
+      console.error('解析用户信息失败:', error);
+      return null;
+    }
   }
 
   // 清除所有token
