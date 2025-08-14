@@ -1,29 +1,41 @@
 <template>
   <div class="container">
     <div class="user-content">
-      <!-- 搜索栏 -->
-      <div class="search-bar">
-        <el-button type="primary" @click="showAddUserDialog" style="margin-right: 20px;">
-          <el-icon><Plus /></el-icon>
+      <!-- 操作按钮组 -->
+      <div style="margin-bottom: 20px">
+        <el-button type="primary" :icon="Plus" @click="showAddUserDialog">
           新增用户
         </el-button>
         <el-input
           v-model="searchKeyword"
-          placeholder="搜索用户名或邮箱"
-          style="width: 300px"
-          clearable
-          @input="handleSearch"
+          style="max-width: 350px; margin-left: 10px"
+          :placeholder="placeholderMap[searchType]"
         >
-          <template #prefix>
-            <el-icon><Search /></el-icon>
+                     <template #prepend>
+                           <el-select 
+                v-model="searchType" 
+                style="width: 130px"
+                popper-class="user-search-type-dropdown"
+                :popper-append-to-body="true"
+                :popper-placement="'bottom-start'"
+              >
+               <el-option label="用户名" value="username" />
+               <el-option label="邮箱" value="email" />
+               <el-option label="手机号" value="phone" />
+             </el-select>
+           </template>
+          <template #append>
+            <el-button :icon="Search" @click="handleSearch" />
           </template>
         </el-input>
-
-        <el-select
-          v-model="roleFilter"
-          placeholder="角色筛选"
-          style="width: 150px; margin-left: 16px"
-        >
+                 <el-select
+           v-model="roleFilter"
+           placeholder="角色筛选"
+           style="width: 150px; margin-left: 10px"
+           popper-class="user-role-filter-dropdown"
+           :popper-append-to-body="true"
+           :popper-placement="'bottom-start'"
+         >
           <el-option label="全部角色" value="" />
           <el-option label="管理员" value="admin" />
           <el-option label="普通用户" value="user" />
@@ -34,10 +46,19 @@
       <el-table
         :data="filteredUsers"
         stripe
-        style="width: 100%; margin-top: 20px"
+        style="width: 100%"
       >
         <el-table-column prop="username" label="用户名" min-width="150" />
-        <el-table-column prop="email" label="邮箱" min-width="200" />
+        <el-table-column prop="email" label="邮箱" min-width="200">
+          <template #default="scope">
+            {{ scope.row.email || '--' }}
+          </template>
+        </el-table-column>
+        <el-table-column prop="phone" label="手机号" min-width="150">
+          <template #default="scope">
+            {{ scope.row.phone || '--' }}
+          </template>
+        </el-table-column>
         <el-table-column prop="role" label="角色" min-width="100">
           <template #default="scope">
             <el-tag :type="scope.row.role === 'admin' ? 'danger' : 'info'">
@@ -74,7 +95,7 @@
         :page-sizes="[10, 20, 50, 100]"
         :total="totalUsers"
         layout="total, sizes, prev, pager, next, jumper"
-        style="margin-top: 20px; text-align: right"
+        style="float: right; margin: 15px 0"
         @size-change="handleSizeChange"
         @current-change="handleCurrentChange"
       />
@@ -85,6 +106,9 @@
       v-model="userDialogVisible"
       :title="isEdit ? '编辑用户' : '新增用户'"
       width="500px"
+      :z-index="2000"
+      :append-to-body="true"
+      @close="handleCloseDialog"
     >
       <el-form
         :model="userForm"
@@ -96,22 +120,31 @@
           <el-input v-model="userForm.username" :disabled="isEdit" />
         </el-form-item>
         <el-form-item label="邮箱" prop="email">
-          <el-input v-model="userForm.email" />
+          <el-input v-model="userForm.email" placeholder="请输入邮箱" />
+        </el-form-item>
+        <el-form-item label="手机号" prop="phone">
+          <el-input v-model="userForm.phone" placeholder="请输入手机号" />
         </el-form-item>
         <el-form-item label="密码" prop="password" v-if="!isEdit">
-          <el-input v-model="userForm.password" type="password" />
+          <el-input v-model="userForm.password" type="password" show-password />
         </el-form-item>
-        <el-form-item label="角色" prop="role">
-          <el-select v-model="userForm.role" style="width: 100%">
-            <el-option label="普通用户" value="user" />
-            <el-option label="管理员" value="admin" />
-          </el-select>
-        </el-form-item>
+                 <el-form-item label="角色" prop="role">
+           <el-select 
+             v-model="userForm.role" 
+             style="width: 100%"
+             popper-class="user-role-select-dropdown"
+             :popper-append-to-body="true"
+             :popper-placement="'bottom-start'"
+           >
+             <el-option label="普通用户" value="user" />
+             <el-option label="管理员" value="admin" />
+           </el-select>
+         </el-form-item>
       </el-form>
 
       <template #footer>
         <span class="dialog-footer">
-          <el-button @click="userDialogVisible = false">取消</el-button>
+          <el-button @click="handleCloseDialog">取消</el-button>
           <el-button type="primary" @click="submitUser">确定</el-button>
         </span>
       </template>
@@ -123,15 +156,25 @@
 import { ref, computed, onMounted } from "vue";
 import { ElMessage, ElMessageBox } from "element-plus";
 import { Plus, Search } from "@element-plus/icons-vue";
+import { http } from "@/net/http";
 
 // 响应式数据
 const searchKeyword = ref("");
+const searchType = ref("username");
 const roleFilter = ref("");
 const currentPage = ref(1);
 const pageSize = ref(10);
 const totalUsers = ref(0);
 const userDialogVisible = ref(false);
 const isEdit = ref(false);
+const userFormRef = ref();
+
+// 搜索占位符映射
+const placeholderMap: Record<string, string> = {
+  username: "搜索用户名",
+  email: "搜索邮箱",
+  phone: "搜索手机号"
+};
 
 // 用户数据
 const users = ref([
@@ -139,6 +182,7 @@ const users = ref([
     id: 1,
     username: "admin",
     email: "admin@example.com",
+    phone: "",
     role: "admin",
     createdAt: new Date("2024-01-01"),
   }
@@ -148,6 +192,7 @@ const users = ref([
 const userForm = ref({
   username: "",
   email: "",
+  phone: "",
   password: "",
   role: "user",
 });
@@ -159,8 +204,10 @@ const userRules = {
     { min: 3, max: 20, message: "长度在 3 到 20 个字符", trigger: "blur" },
   ],
   email: [
-    { required: true, message: "请输入邮箱地址", trigger: "blur" },
     { type: "email", message: "请输入正确的邮箱地址", trigger: "blur" },
+  ],
+  phone: [
+    { pattern: /^1[3-9]\d{9}$/, message: "请输入正确的手机号", trigger: "blur" },
   ],
   password: [
     { required: true, message: "请输入密码", trigger: "blur" },
@@ -174,11 +221,21 @@ const filteredUsers = computed(() => {
   let result = users.value;
 
   if (searchKeyword.value) {
-    result = result.filter(
-      (user) =>
-        user.username.includes(searchKeyword.value) ||
-        user.email.includes(searchKeyword.value)
-    );
+    result = result.filter((user) => {
+      const keyword = searchKeyword.value.toLowerCase();
+      switch (searchType.value) {
+        case 'username':
+          return user.username.toLowerCase().includes(keyword);
+        case 'email':
+          return user.email && user.email.toLowerCase().includes(keyword);
+        case 'phone':
+          return user.phone && user.phone.includes(keyword);
+        default:
+          return user.username.toLowerCase().includes(keyword) ||
+                 (user.email && user.email.toLowerCase().includes(keyword)) ||
+                 (user.phone && user.phone.includes(keyword));
+      }
+    });
   }
 
   if (roleFilter.value) {
@@ -202,8 +259,10 @@ const handleCurrentChange = (page: number) => {
   currentPage.value = page;
 };
 
-const formatDate = (date: Date) => {
-  return date.toLocaleDateString("zh-CN");
+const formatDate = (date: Date | string) => {
+  if (!date) return '--';
+  const dateObj = typeof date === 'string' ? new Date(date) : date;
+  return dateObj.toLocaleDateString("zh-CN");
 };
 
 const showAddUserDialog = () => {
@@ -211,6 +270,7 @@ const showAddUserDialog = () => {
   userForm.value = {
     username: "",
     email: "",
+    phone: "",
     password: "",
     role: "user",
   };
@@ -222,6 +282,7 @@ const editUser = (user: any) => {
   userForm.value = {
     username: user.username,
     email: user.email,
+    phone: user.phone || "",
     password: "",
     role: user.role,
   };
@@ -240,40 +301,96 @@ const deleteUser = async (user: any) => {
       }
     );
 
-    // 这里应该调用 API 删除用户
-    users.value = users.value.filter((u) => u.id !== user.id);
-    ElMessage.success("用户删除成功");
-  } catch {
-    // 用户取消删除
+    await removeUser(user.username);
+  } catch (error: any) {
+    // 用户取消删除或删除失败
+    if (error && error.response) {
+      // API 错误已在 removeUser 中处理
+    }
   }
 };
 
-const submitUser = () => {
-  // 这里应该调用 API 保存用户
-  if (isEdit.value) {
-    const index = users.value.findIndex(
-      (u) => u.username === userForm.value.username
-    );
-    if (index !== -1) {
-      users.value[index] = { ...users.value[index], ...userForm.value };
-    }
-    ElMessage.success("用户更新成功");
-  } else {
-    const newUser = {
-      id: users.value.length + 1,
-      ...userForm.value,
-      createdAt: new Date(),
-    };
-    users.value.push(newUser);
-    ElMessage.success("用户创建成功");
-  }
-
+const handleCloseDialog = () => {
+  userFormRef.value?.resetFields();
   userDialogVisible.value = false;
+};
+
+const submitUser = async () => {
+  try {
+    await userFormRef.value?.validate();
+    
+    if (isEdit.value) {
+      await updateUser(userForm.value);
+    } else {
+      await createUser(userForm.value);
+    }
+    userDialogVisible.value = false;
+  } catch (error: any) {
+    if (error && error.response) {
+      // API 错误已在 createUser/updateUser 中处理
+      console.error('提交用户数据失败:', error);
+    }
+    // 表单验证错误不需要额外处理
+  }
+};
+
+// 获取用户列表
+const fetchUsers = async () => {
+  try {
+    const response = await http.get('/api/users');
+    users.value = response.data.data || [];
+    totalUsers.value = users.value.length;
+  } catch (error: any) {
+    console.error('获取用户列表失败:', error);
+    ElMessage.error('获取用户列表失败');
+  }
+};
+
+// 创建用户
+const createUser = async (userData: any) => {
+  try {
+    await http.post('/api/users', userData);
+    ElMessage.success('用户创建成功');
+    await fetchUsers(); // 重新获取用户列表
+  } catch (error: any) {
+    console.error('创建用户失败:', error);
+    const errorMessage = error.response?.data?.message || '创建用户失败';
+    ElMessage.error(errorMessage);
+    throw error;
+  }
+};
+
+// 更新用户
+const updateUser = async (userData: any) => {
+  try {
+    await http.put(`/api/users/${userData.username}`, userData);
+    ElMessage.success('用户更新成功');
+    await fetchUsers(); // 重新获取用户列表
+  } catch (error: any) {
+    console.error('更新用户失败:', error);
+    const errorMessage = error.response?.data?.message || '更新用户失败';
+    ElMessage.error(errorMessage);
+    throw error;
+  }
+};
+
+// 删除用户
+const removeUser = async (username: string) => {
+  try {
+    await http.delete(`/api/users/${username}`);
+    ElMessage.success('用户删除成功');
+    await fetchUsers(); // 重新获取用户列表
+  } catch (error: any) {
+    console.error('删除用户失败:', error);
+    const errorMessage = error.response?.data?.message || '删除用户失败';
+    ElMessage.error(errorMessage);
+    throw error;
+  }
 };
 
 // 生命周期
 onMounted(() => {
-  totalUsers.value = users.value.length;
+  fetchUsers();
 });
 </script>
 
@@ -285,13 +402,56 @@ onMounted(() => {
   min-height: 600px;
 }
 
-.search-bar {
-  display: flex;
-  align-items: center;
-  margin-bottom: 20px;
-}
-
 .user-content {
   min-height: 400px;
+}
+</style>
+
+<style>
+/* 全局样式，修复用户角色选择下拉框的显示问题 */
+.user-role-select-dropdown,
+.user-role-filter-dropdown,
+.user-search-type-dropdown {
+  z-index: 3000 !important;
+  max-height: none !important;
+  min-width: 120px !important;
+  width: auto !important;
+}
+
+.user-role-select-dropdown .el-select-dropdown__wrap,
+.user-role-filter-dropdown .el-select-dropdown__wrap,
+.user-search-type-dropdown .el-select-dropdown__wrap {
+  max-height: none !important;
+}
+
+.user-role-select-dropdown .el-select-dropdown__list,
+.user-role-filter-dropdown .el-select-dropdown__list,
+.user-search-type-dropdown .el-select-dropdown__list {
+  max-height: none !important;
+}
+
+.user-role-select-dropdown .el-select-dropdown__item,
+.user-role-filter-dropdown .el-select-dropdown__item,
+.user-search-type-dropdown .el-select-dropdown__item {
+  padding: 0 20px;
+  height: 34px;
+  line-height: 34px;
+  white-space: nowrap;
+  overflow: visible;
+  text-overflow: clip;
+  min-width: 100px;
+}
+
+.user-role-select-dropdown .el-select-dropdown__item:hover,
+.user-role-filter-dropdown .el-select-dropdown__item:hover,
+.user-search-type-dropdown .el-select-dropdown__item:hover {
+  background-color: #f5f7fa;
+}
+
+.user-role-select-dropdown .el-select-dropdown__item.selected,
+.user-role-filter-dropdown .el-select-dropdown__item.selected,
+.user-search-type-dropdown .el-select-dropdown__item.selected {
+  color: #409eff;
+  font-weight: bold;
 }
 </style>

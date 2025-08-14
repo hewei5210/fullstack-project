@@ -20,6 +20,13 @@
         style="margin-left: 10px"
         >导出JSON文件</el-button
       >
+      <el-button
+        type="info"
+        :icon="Download"
+        @click="exportExcelDialog"
+        style="margin-left: 10px"
+        >导出EXCEL文件</el-button
+      >
       <el-input
         v-model="searchContent"
         style="max-width: 350px; margin-left: 10px"
@@ -109,6 +116,7 @@
       @submit="handleSubmitSuccess"
     />
     <ExportDialog v-model="exportDialogVisible" />
+    <ExportExcelDialog v-model="exportExcelDialogVisible" />
   </div>
 </template>
 
@@ -120,6 +128,7 @@ const AddBatchId = defineAsyncComponent(() => import("./components/addBatchId.vu
 const EditId = defineAsyncComponent(() => import("./components/editId.vue"));
 const DeleteId = defineAsyncComponent(() => import("./components/deleteId.vue"));
 const ExportDialog = defineAsyncComponent(() => import("./components/exportDialog.vue"));
+const ExportExcelDialog = defineAsyncComponent(() => import("./components/exportExcelDialog.vue"));
 import { Plus, Download, Upload, Search } from "@element-plus/icons-vue";
 // import { ElMessage } from "element-plus";
 
@@ -205,6 +214,12 @@ const batchDialog = () => {
 const exportDialogVisible = ref(false);
 const exportDialog = () => {
   exportDialogVisible.value = true;
+};
+
+// 控制导出EXCEL弹窗
+const exportExcelDialogVisible = ref(false);
+const exportExcelDialog = () => {
+  exportExcelDialogVisible.value = true;
 };
 
 // 编辑相关状态

@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from "vue-router";
+import tokenManager from "@/utils/tokenManager";
 
 const routes = [
   {
@@ -75,7 +76,8 @@ router.beforeEach((to, _from, next) => {
     document.title = `${to.meta.title} - 前端工具平台`;
   }
 
-  const isAuthenticated = localStorage.getItem("token");
+  const token = tokenManager.getToken();
+  const isAuthenticated = !!token;
 
   // 已登录时禁止访问登录页（避免循环）
   if (isAuthenticated && to.path === "/login") {

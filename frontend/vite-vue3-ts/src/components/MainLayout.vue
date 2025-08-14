@@ -112,9 +112,7 @@
 </template>
 
 <script setup lang="ts">
-const username = localStorage.getItem("username");
-
-import { ref, defineAsyncComponent, watch } from "vue";
+import { ref, defineAsyncComponent, watch, computed } from "vue";
 import { useRouter } from "vue-router";
 import { 
   SwitchButton, 
@@ -127,6 +125,13 @@ import {
   Clock,
   ArrowLeft
 } from "@element-plus/icons-vue";
+import tokenManager from "@/utils/tokenManager";
+
+// 获取用户名
+const username = computed(() => {
+  const user = tokenManager.getUser();
+  return user?.username || '';
+});
 
 // 使用异步组件，添加加载和错误处理
 const Breadcrumb = defineAsyncComponent({
@@ -208,8 +213,8 @@ const handleMenuSelect = (index: string) => {
 
 // 退出登录
 const handleLogout = () => {
-  localStorage.removeItem("token");
-  localStorage.removeItem("username");
+  // 使用 tokenManager 清除所有 token
+  tokenManager.clearTokens();
   router.push("/login");
 };
 </script>

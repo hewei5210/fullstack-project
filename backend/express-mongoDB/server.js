@@ -31,6 +31,7 @@ app.get('/health', (req, res) => {
 
 // 路由
 app.use('/api', require('./src/routes/auth'));
+app.use('/api/users', require('./src/routes/users'));
 app.use('/api', require('./src/routes/translations'));
 app.use('/api/csv-sync', require('./src/routes/csvSync'));
 

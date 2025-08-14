@@ -188,4 +188,25 @@ router.get('/downloadTemplate', async (req, res) => {
   }
 });
 
+// 导出EXCEL数据
+router.get('/exportExcel', async (req, res) => {
+  try {
+    const { includeId = false } = req.query;
+    
+    const workbook = await translationService.exportExcelData(includeId === 'true');
+    
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', 'attachment; filename=translation_data.xlsx');
+    
+    await workbook.xlsx.write(res);
+    res.end();
+  } catch (error) {
+    res.status(400).json({
+      status: 400,
+      message: error.message,
+      data: ''
+    });
+  }
+});
+
 module.exports = router;

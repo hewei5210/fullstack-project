@@ -271,6 +271,55 @@ class TranslationService {
     
     return workbook;
   }
+
+  // 导出EXCEL数据
+  async exportExcelData(includeId = false) {
+    const translations = await Translation.find().sort('id');
+    
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('翻译数据');
+    
+    // 根据是否包含ID设置表头
+    if (includeId) {
+      worksheet.columns = [
+        { header: "翻译项ID", key: "id", width: 20 },
+        { header: "翻译项", key: "zh-CN", width: 30 },
+        { header: "翻译项-英文", key: "en-US", width: 30 },
+        { header: "翻译项-繁体", key: "zh-HK", width: 30 },
+      ];
+    } else {
+      worksheet.columns = [
+        { header: "翻译项", key: "zh-CN", width: 30 },
+        { header: "翻译项-英文", key: "en-US", width: 30 },
+        { header: "翻译项-繁体", key: "zh-HK", width: 30 },
+      ];
+    }
+    
+    // 添加数据行
+    translations.forEach(translation => {
+      const rowData = {
+        'zh-CN': translation.source || '',
+        'en-US': translation.target['en-US'] || '',
+        'zh-HK': translation.target['zh-HK'] || ''
+      };
+      
+      if (includeId) {
+        rowData.id = translation.id;
+      }
+      
+      worksheet.addRow(rowData);
+    });
+    
+    // 设置表头样式
+    worksheet.getRow(1).font = { bold: true };
+    worksheet.getRow(1).fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FFE0E0E0' }
+    };
+    
+    return workbook;
+  }
 }
 
 module.exports = new TranslationService();
