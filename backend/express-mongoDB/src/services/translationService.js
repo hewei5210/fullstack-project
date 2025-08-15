@@ -1,6 +1,5 @@
 const Translation = require('../models/Translation');
 const ExcelJS = require('exceljs');
-const Papa = require('papaparse');
 
 class TranslationService {
   // 获取所有翻译项
@@ -25,22 +24,37 @@ class TranslationService {
 
   // 搜索翻译项
   async search(searchParams) {
-    const { keyword, field = 'id' } = searchParams;
+    const { searchContent, searchSelect = 'id', page = 1, pageSize = 10 } = searchParams;
     
     let query = {};
-    if (keyword) {
-      if (field === 'id') {
-        query.id = { $regex: keyword, $options: 'i' };
-      } else if (field === 'zh-CN') {
-        query['target.zh-CN'] = { $regex: keyword, $options: 'i' };
-      } else if (field === 'en-US') {
-        query['target.en-US'] = { $regex: keyword, $options: 'i' };
-      } else if (field === 'zh-HK') {
-        query['target.zh-HK'] = { $regex: keyword, $options: 'i' };
+    if (searchContent) {
+      if (searchSelect === 'id') {
+        query.id = { $regex: searchContent, $options: 'i' };
+      } else if (searchSelect === 'zh-CN') {
+        // 搜索source字段，因为zh-CN的内容存储在source中
+        query.source = { $regex: searchContent, $options: 'i' };
+      } else if (searchSelect === 'en-US') {
+        query['target.en-US'] = { $regex: searchContent, $options: 'i' };
+      } else if (searchSelect === 'zh-HK') {
+        query['target.zh-HK'] = { $regex: searchContent, $options: 'i' };
       }
     }
     
-    return await Translation.find(query).sort('id');
+    const skip = (page - 1) * pageSize;
+    
+    const translations = await Translation.find(query)
+      .sort('id')
+      .skip(skip)
+      .limit(parseInt(pageSize));
+    
+    const total = await Translation.countDocuments(query);
+    
+    return {
+      data: translations,
+      total,
+      page: parseInt(page),
+      limit: parseInt(pageSize)
+    };
   }
 
   // 添加翻译项
@@ -122,15 +136,50 @@ class TranslationService {
   }
 
   // 批量导入
-  async batchImport(fileBuffer) {
-    const csvData = fileBuffer.toString('utf8');
-    const parsedData = Papa.parse(csvData, {
-      header: true,
-      skipEmptyLines: true
+  async batchImport(fileBuffer, fileName = '') {
+    let parsedData;
+    
+    // 只接受Excel文件
+    if (!fileName.toLowerCase().endsWith('.xlsx') && !fileName.toLowerCase().endsWith('.xls')) {
+      throw new Error('只支持Excel文件(.xlsx/.xls)');
+    }
+    
+    // 处理Excel文件
+    const workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.load(fileBuffer);
+    
+    const worksheet = workbook.getWorksheet(1); // 获取第一个工作表
+    if (!worksheet) {
+      throw new Error('Excel文件中没有找到工作表');
+    }
+    
+    // 获取表头
+    const headers = [];
+    worksheet.getRow(1).eachCell((cell, colNumber) => {
+      headers[colNumber - 1] = cell.value;
     });
+    
+    // 转换为数据结构
+    const data = [];
+    worksheet.eachRow((row, rowNumber) => {
+      if (rowNumber === 1) return; // 跳过表头
+      
+      const rowData = {};
+      row.eachCell((cell, colNumber) => {
+        const header = headers[colNumber - 1];
+        if (header) {
+          rowData[header] = cell.value || '';
+        }
+      });
+      if (Object.keys(rowData).length > 0) {
+        data.push(rowData);
+      }
+    });
+    
+    parsedData = { data, errors: [] };
 
     if (parsedData.errors.length > 0) {
-      throw new Error('CSV文件格式错误');
+      throw new Error('文件格式错误');
     }
 
     const results = {
@@ -143,7 +192,7 @@ class TranslationService {
     // 获取现有翻译项用于去重检查
     const existingTranslations = await Translation.find();
     const existingSources = new Set(existingTranslations.map(item => item.source));
-    const internalSet = new Set(); // 检查CSV内部重复
+    const internalSet = new Set(); // 检查Excel内部重复
 
     for (let i = 0; i < parsedData.data.length; i++) {
       const row = parsedData.data[i];
@@ -151,11 +200,11 @@ class TranslationService {
 
       const cellValue = row.Source || row['翻译项'];
 
-      // 1. 优先检测CSV内部重复
+      // 1. 优先检测Excel内部重复
       if (internalSet.has(cellValue)) {
         results.errors.push({
           row: i + 2, // +2 因为跳过表头且数组从0开始
-          message: 'CSV内部重复'
+          message: 'Excel内部重复'
         });
         continue;
       }
@@ -191,6 +240,9 @@ class TranslationService {
 
         results.data.push(translation);
         results.success++;
+        
+        // 立即保存到数据库，避免ID重复
+        await translation.save();
       } catch (error) {
         results.errors.push({
           row: i + 2,
@@ -199,10 +251,7 @@ class TranslationService {
       }
     }
 
-    // 批量插入成功的数据
-    if (results.data.length > 0) {
-      await Translation.insertMany(results.data, { ordered: false });
-    }
+    // 数据已经逐个保存，不需要批量插入
 
     return {
       code: 200,
@@ -289,15 +338,50 @@ class TranslationService {
   }
 
   // 批量修改
-  async batchUpdate(fileBuffer) {
-    const csvData = fileBuffer.toString('utf8');
-    const parsedData = Papa.parse(csvData, {
-      header: true,
-      skipEmptyLines: true
+  async batchUpdate(fileBuffer, fileName = '') {
+    let parsedData;
+    
+    // 只接受Excel文件
+    if (!fileName.toLowerCase().endsWith('.xlsx') && !fileName.toLowerCase().endsWith('.xls')) {
+      throw new Error('只支持Excel文件(.xlsx/.xls)');
+    }
+    
+    // 处理Excel文件
+    const workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.load(fileBuffer);
+    
+    const worksheet = workbook.getWorksheet(1); // 获取第一个工作表
+    if (!worksheet) {
+      throw new Error('Excel文件中没有找到工作表');
+    }
+    
+    // 获取表头
+    const headers = [];
+    worksheet.getRow(1).eachCell((cell, colNumber) => {
+      headers[colNumber - 1] = cell.value;
     });
+    
+    // 转换为数据结构
+    const data = [];
+    worksheet.eachRow((row, rowNumber) => {
+      if (rowNumber === 1) return; // 跳过表头
+      
+      const rowData = {};
+      row.eachCell((cell, colNumber) => {
+        const header = headers[colNumber - 1];
+        if (header) {
+          rowData[header] = cell.value || '';
+        }
+      });
+      if (Object.keys(rowData).length > 0) {
+        data.push(rowData);
+      }
+    });
+    
+    parsedData = { data, errors: [] };
 
     if (parsedData.errors.length > 0) {
-      throw new Error('CSV文件格式错误');
+      throw new Error('文件格式错误');
     }
 
     const results = {
@@ -378,15 +462,50 @@ class TranslationService {
   }
 
   // 批量获取翻译项ID
-  async batchGetIds(fileBuffer) {
-    const csvData = fileBuffer.toString('utf8');
-    const parsedData = Papa.parse(csvData, {
-      header: true,
-      skipEmptyLines: true
+  async batchGetIds(fileBuffer, fileName = '') {
+    let parsedData;
+    
+    // 只接受Excel文件
+    if (!fileName.toLowerCase().endsWith('.xlsx') && !fileName.toLowerCase().endsWith('.xls')) {
+      throw new Error('只支持Excel文件(.xlsx/.xls)');
+    }
+    
+    // 处理Excel文件
+    const workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.load(fileBuffer);
+    
+    const worksheet = workbook.getWorksheet(1); // 获取第一个工作表
+    if (!worksheet) {
+      throw new Error('Excel文件中没有找到工作表');
+    }
+    
+    // 获取表头
+    const headers = [];
+    worksheet.getRow(1).eachCell((cell, colNumber) => {
+      headers[colNumber - 1] = cell.value;
     });
+    
+    // 转换为数据结构
+    const data = [];
+    worksheet.eachRow((row, rowNumber) => {
+      if (rowNumber === 1) return; // 跳过表头
+      
+      const rowData = {};
+      row.eachCell((cell, colNumber) => {
+        const header = headers[colNumber - 1];
+        if (header) {
+          rowData[header] = cell.value || '';
+        }
+      });
+      if (Object.keys(rowData).length > 0) {
+        data.push(rowData);
+      }
+    });
+    
+    parsedData = { data, errors: [] };
 
     if (parsedData.errors.length > 0) {
-      throw new Error('CSV文件格式错误');
+      throw new Error('文件格式错误');
     }
 
     const results = {
@@ -544,6 +663,126 @@ class TranslationService {
     };
     
     return workbook;
+  }
+
+  // 下载批量删除模板
+  downloadDeleteTemplate() {
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('批量删除模板');
+    
+    // 设置表头 - 包含所有列，但只有翻译项ID是必传的
+    worksheet.columns = [
+      { header: "翻译项ID", key: "id", width: 20 },
+      { header: "翻译项", key: "source", width: 30 },
+      { header: "翻译项-英文", key: "en-US", width: 30 },
+      { header: "翻译项-繁体", key: "zh-HK", width: 30 },
+    ];
+    
+    return workbook;
+  }
+
+  // 批量删除
+  async batchDelete(fileBuffer, fileName = '') {
+    let parsedData;
+    
+    // 只接受Excel文件
+    if (!fileName.toLowerCase().endsWith('.xlsx') && !fileName.toLowerCase().endsWith('.xls')) {
+      throw new Error('只支持Excel文件(.xlsx/.xls)');
+    }
+    
+    // 处理Excel文件
+    const workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.load(fileBuffer);
+    
+    const worksheet = workbook.getWorksheet(1); // 获取第一个工作表
+    if (!worksheet) {
+      throw new Error('Excel文件中没有找到工作表');
+    }
+    
+    // 获取表头
+    const headers = [];
+    worksheet.getRow(1).eachCell((cell, colNumber) => {
+      headers[colNumber - 1] = cell.value;
+    });
+    
+    // 转换为数据结构
+    const data = [];
+    worksheet.eachRow((row, rowNumber) => {
+      if (rowNumber === 1) return; // 跳过表头
+      
+      const rowData = {};
+      row.eachCell((cell, colNumber) => {
+        const header = headers[colNumber - 1];
+        if (header) {
+          rowData[header] = cell.value || '';
+        }
+      });
+      if (Object.keys(rowData).length > 0) {
+        data.push(rowData);
+      }
+    });
+    
+    parsedData = { data, errors: [] };
+
+    if (parsedData.errors.length > 0) {
+      throw new Error('文件格式错误');
+    }
+
+    const results = {
+      total: 0,
+      success: 0,
+      errors: []
+    };
+
+    // 获取所有现有翻译项的ID用于验证
+    const existingTranslations = await Translation.find();
+    const existingIds = new Set(existingTranslations.map(item => item.id));
+
+    for (let i = 0; i < parsedData.data.length; i++) {
+      const row = parsedData.data[i];
+      results.total++;
+
+      const translationId = row.ID || row['翻译项ID'] || row.id;
+
+      // 检查翻译项ID是否存在
+      if (!translationId) {
+        results.errors.push({
+          row: i + 2,
+          message: '翻译项ID不能为空'
+        });
+        continue;
+      }
+
+      if (!existingIds.has(translationId)) {
+        results.errors.push({
+          row: i + 2,
+          message: `翻译项ID "${translationId}" 不存在`
+        });
+        continue;
+      }
+
+      try {
+        // 执行删除
+        const deletedTranslation = await Translation.findOneAndDelete({ id: translationId });
+
+        if (!deletedTranslation) {
+          throw new Error('删除失败');
+        }
+
+        results.success++;
+      } catch (error) {
+        results.errors.push({
+          row: i + 2,
+          message: error.message
+        });
+      }
+    }
+
+    return {
+      code: 200,
+      data: results,
+      message: `批量删除 ${results.total} 条数据，成功删除 ${results.success} 条数据，失败 ${results.errors.length} 条数据`
+    };
   }
 }
 

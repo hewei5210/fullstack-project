@@ -66,6 +66,7 @@ import { ref, watch } from "vue";
 import { ElMessage } from "element-plus"; // Import ElMessage as a value
 import { UploadFilled } from "@element-plus/icons-vue";
 import type { UploadInstance } from "element-plus";
+import tokenManager from "../../../../utils/tokenManager";
 
 const uploadRef = ref<UploadInstance>(); // 获取el-upload组件引用
 
@@ -93,7 +94,7 @@ const uploadResult = ref<any>(null);
 
 // 上传请求头
 const uploadHeaders = {
-  'Authorization': `Bearer ${localStorage.getItem('token')}`
+  'Authorization': `Bearer ${tokenManager.getToken()}`
 };
 
 // 同步 v-model 状态
@@ -113,9 +114,8 @@ declare global {
 }
 const beforeUpload = (file: File) => {
   const isExcel = [".xls", ".xlsx"].some((ext) => file.name.endsWith(ext));
-  const isCSV = file.name.endsWith(".csv");
-  if (!isExcel && !isCSV) {
-    ElMessage.error("仅支持Excel文件(.xls/.xlsx)和CSV文件(.csv)");
+  if (!isExcel) {
+    ElMessage.error("仅支持Excel文件(.xls/.xlsx)");
     return false;
   }
   return true;
@@ -164,17 +164,29 @@ const handleClose = () => {
 // 下载模板
 const downloadTemplate = async () => {
   try {
-    const response = await http.get("/api/downloadTemplate", null, {
-      responseType: "blob",
+    const response = await fetch(`${BASE_URL}/api/downloadTemplate`, {
+      headers: {
+        'Authorization': `Bearer ${tokenManager.getToken()}`
+      }
     });
-    const url = window.URL.createObjectURL(new Blob([response.data]));
+    
+    if (!response.ok) {
+      throw new Error('下载失败');
+    }
+    
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
     link.setAttribute("download", "批量添加翻译项模板.xlsx");
     document.body.appendChild(link);
     link.click();
+    document.body.removeChild(link);
     URL.revokeObjectURL(url);
+    
+    ElMessage.success("模板下载成功");
   } catch (error) {
+    console.error('下载模板失败:', error);
     ElMessage.error("模板下载失败");
   }
 };

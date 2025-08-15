@@ -92,6 +92,7 @@ import { ref, watch } from "vue";
 import { ElMessage } from "element-plus";
 import { UploadFilled, Download } from "@element-plus/icons-vue";
 import type { UploadInstance } from "element-plus";
+import tokenManager from "../../../../utils/tokenManager";
 
 const uploadRef = ref<UploadInstance>();
 
@@ -120,7 +121,7 @@ const exporting = ref(false);
 
 // 上传请求头
 const uploadHeaders = {
-  'Authorization': `Bearer ${localStorage.getItem('token')}`
+  'Authorization': `Bearer ${tokenManager.getToken()}`
 };
 
 // 同步 v-model 状态
@@ -133,9 +134,8 @@ watch(visible, (val) => emit("update:modelValue", val));
 // 文件类型检查
 const beforeUpload = (file: File) => {
   const isExcel = [".xls", ".xlsx"].some((ext) => file.name.endsWith(ext));
-  const isCSV = file.name.endsWith(".csv");
-  if (!isExcel && !isCSV) {
-    ElMessage.error("仅支持Excel文件(.xls/.xlsx)和CSV文件(.csv)");
+  if (!isExcel) {
+    ElMessage.error("仅支持Excel文件(.xls/.xlsx)");
     return false;
   }
   return true;
@@ -186,16 +186,27 @@ const handleClose = () => {
 // 下载模板
 const downloadTemplate = async () => {
   try {
-    const response = await http.get("/api/downloadGetIdsTemplate", null, {
-      responseType: "blob",
+    const response = await fetch(`${BASE_URL}/api/downloadGetIdsTemplate`, {
+      headers: {
+        'Authorization': `Bearer ${tokenManager.getToken()}`
+      }
     });
-    const url = window.URL.createObjectURL(new Blob([response.data]));
+    
+    if (!response.ok) {
+      throw new Error('下载失败');
+    }
+    
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
     link.setAttribute("download", "批量获取翻译项ID模板.xlsx");
     document.body.appendChild(link);
     link.click();
+    document.body.removeChild(link);
     URL.revokeObjectURL(url);
+    
+    ElMessage.success("模板下载成功");
   } catch (error) {
     ElMessage.error("模板下载失败");
   }
@@ -210,23 +221,34 @@ const exportResult = async () => {
 
   exporting.value = true;
   try {
-    const response = await http.post("/api/exportGetIdsResult", {
-      data: uploadResult.value.data
-    }, {
-      responseType: "blob",
+    const response = await fetch(`${BASE_URL}/api/exportGetIdsResult`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${tokenManager.getToken()}`
+      },
+      body: JSON.stringify({
+        data: uploadResult.value.data
+      })
     });
     
-    const url = window.URL.createObjectURL(new Blob([response.data]));
+    if (!response.ok) {
+      throw new Error('导出失败');
+    }
+    
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
     link.setAttribute("download", `翻译项ID结果_${new Date().toISOString().split('T')[0]}.xlsx`);
     document.body.appendChild(link);
     link.click();
-    URL.revokeObjectURL(url);
     document.body.removeChild(link);
+    URL.revokeObjectURL(url);
     
     ElMessage.success("Excel文件导出成功");
   } catch (error) {
+    console.error('导出失败:', error);
     ElMessage.error("导出失败");
   } finally {
     exporting.value = false;

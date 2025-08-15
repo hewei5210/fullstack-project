@@ -103,6 +103,7 @@ watch(visible, (val) => emit("update:modelValue", val));
 const handleSubmit = async () => {
   try {
     await formRef.value?.validate();
+    formData.target["zh-CN"] = formData.source;
     http
       .post("/api/addBing", {
         source: formData.source,

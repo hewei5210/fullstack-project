@@ -14,7 +14,7 @@
             新增翻译项
           </el-button>
           <el-button 
-            type="warning" 
+            type="success" 
             :icon="Upload" 
             @click="batchDialog"
             title="批量导入翻译项"
@@ -28,6 +28,14 @@
             title="批量修改现有翻译项"
           >
             批量修改
+          </el-button>
+          <el-button 
+            type="danger" 
+            :icon="Delete" 
+            @click="batchDeleteDialog"
+            title="批量删除翻译项"
+          >
+            批量删除
           </el-button>
           <el-button 
             type="info" 
@@ -143,6 +151,10 @@
     <AddBatchId v-model="batchDialogVisible" @submit="handleSubmitSuccess" />
     <UpdateBatchId v-model="batchUpdateDialogVisible" @submit="handleSubmitSuccess" />
     <GetBatchIds v-model="batchGetIdsDialogVisible" @submit="handleSubmitSuccess" />
+    <DeleteBatchId
+      v-model="batchDeleteDialogVisible"
+      @submit="handleSubmitSuccess"
+    />
     <EditId
       v-model="editDialogVisible"
       :current-edit-item="currentEditItem"
@@ -165,11 +177,12 @@ const AddId = defineAsyncComponent(() => import("./components/addId.vue"));
 const AddBatchId = defineAsyncComponent(() => import("./components/addBatchId.vue"));
 const UpdateBatchId = defineAsyncComponent(() => import("./components/updateBatchId.vue"));
 const GetBatchIds = defineAsyncComponent(() => import("./components/getBatchIds.vue"));
+const DeleteBatchId = defineAsyncComponent(() => import("./components/deleteBatchId.vue"));
 const EditId = defineAsyncComponent(() => import("./components/editId.vue"));
 const DeleteId = defineAsyncComponent(() => import("./components/deleteId.vue"));
 const ExportDialog = defineAsyncComponent(() => import("./components/exportDialog.vue"));
 const ExportExcelDialog = defineAsyncComponent(() => import("./components/exportExcelDialog.vue"));
-import { Plus, Download, Upload, Search, Edit } from "@element-plus/icons-vue";
+import { Plus, Download, Upload, Search, Edit, Delete } from "@element-plus/icons-vue";
 // import { ElMessage } from "element-plus";
 
 // 分页
@@ -218,8 +231,14 @@ const searchData = () => {
     searchContent: searchContent.value,
   };
   http.get("/api/search", params).then((res) => {
-    tableData.value = res.data.data.data;
-    total.value = res.data.data.total;
+    if (res.data.status === 200) {
+      tableData.value = res.data.data.data;
+      total.value = res.data.data.total;
+    } else {
+      console.error('搜索失败:', res.data.message);
+    }
+  }).catch((error) => {
+    console.error('搜索请求失败:', error);
   });
 };
 // 获取列表数据
@@ -234,8 +253,14 @@ const getData = () => {
     pageSize: pageSize.value,
   };
   http.get("/api/getBingList", params).then((res) => {
-    tableData.value = res.data.data.data;
-    total.value = res.data.data.total;
+    if (res.data.status === 200) {
+      tableData.value = res.data.data.data;
+      total.value = res.data.data.total;
+    } else {
+      console.error('获取数据失败:', res.data.message);
+    }
+  }).catch((error) => {
+    console.error('获取数据请求失败:', error);
   });
 };
 
@@ -271,6 +296,12 @@ const exportExcelDialog = () => {
 const batchGetIdsDialogVisible = ref(false);
 const batchGetIdsDialog = () => {
   batchGetIdsDialogVisible.value = true;
+};
+
+// 批量删除弹窗
+const batchDeleteDialogVisible = ref(false);
+const batchDeleteDialog = () => {
+  batchDeleteDialogVisible.value = true;
 };
 
 // 编辑相关状态

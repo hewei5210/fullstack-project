@@ -109,7 +109,7 @@ router.post('/batchUpload', upload.single('file'), async (req, res) => {
       });
     }
 
-    const result = await translationService.batchImport(req.file.buffer);
+    const result = await translationService.batchImport(req.file.buffer, req.file.originalname);
     res.status(200).json({
       status: 200,
       message: result.message,
@@ -135,7 +135,7 @@ router.post('/batchUpdate', upload.single('file'), async (req, res) => {
       });
     }
 
-    const result = await translationService.batchUpdate(req.file.buffer);
+    const result = await translationService.batchUpdate(req.file.buffer, req.file.originalname);
     res.status(200).json({
       status: 200,
       message: result.message,
@@ -161,7 +161,7 @@ router.post('/batchGetIds', upload.single('file'), async (req, res) => {
       });
     }
 
-    const result = await translationService.batchGetIds(req.file.buffer);
+    const result = await translationService.batchGetIds(req.file.buffer, req.file.originalname);
     res.status(200).json({
       status: 200,
       message: result.message,
@@ -316,6 +316,51 @@ router.get('/exportExcel', async (req, res) => {
     
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     res.setHeader('Content-Disposition', 'attachment; filename=translation_data.xlsx');
+    
+    await workbook.xlsx.write(res);
+    res.end();
+  } catch (error) {
+    res.status(400).json({
+      status: 400,
+      message: error.message,
+      data: ''
+    });
+  }
+});
+
+// 批量删除
+router.post('/batchDelete', upload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({
+        status: 400,
+        message: '请上传文件',
+        data: ''
+      });
+    }
+
+    const result = await translationService.batchDelete(req.file.buffer, req.file.originalname);
+    res.status(200).json({
+      status: 200,
+      message: result.message,
+      data: result.data
+    });
+  } catch (error) {
+    res.status(400).json({
+      status: 400,
+      message: error.message,
+      data: ''
+    });
+  }
+});
+
+// 下载批量删除模板
+router.get('/downloadDeleteTemplate', async (req, res) => {
+  try {
+    const workbook = await translationService.downloadDeleteTemplate();
+    
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', 'attachment; filename=translation_delete_template.xlsx');
     
     await workbook.xlsx.write(res);
     res.end();

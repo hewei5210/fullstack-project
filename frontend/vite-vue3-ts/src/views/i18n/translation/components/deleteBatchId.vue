@@ -1,7 +1,7 @@
 <template>
   <el-dialog
     v-model="visible"
-    title="批量修改翻译项"
+    title="批量删除翻译项"
     width="50%"
     @close="handleClose"
   >
@@ -13,7 +13,7 @@
       :on-success="handleSuccess"
       :on-error="handleError"
       drag
-      :action="`${BASE_URL}/api/batchUpdate`"
+      :action="`${BASE_URL}/api/batchDelete`"
       :headers="uploadHeaders"
       multiple
     >
@@ -37,7 +37,7 @@
 
     <!-- 显示上传结果 -->
     <div v-if="uploadResult" class="upload-result">
-      <el-divider content-position="left">修改结果</el-divider>
+      <el-divider content-position="left">删除结果</el-divider>
       <el-alert
         :title="uploadResult.message"
         :type="uploadResult.success > 0 ? 'success' : 'error'"
@@ -55,7 +55,8 @@
     </div>
 
     <template #footer>
-      <el-button @click="handleClose">关闭</el-button>
+      <el-button @click="handleClose">取消</el-button>
+      <el-button type="danger" @click="handleDelete" :loading="deleting">删除</el-button>
     </template>
   </el-dialog>
 </template>
@@ -72,25 +73,15 @@ const uploadRef = ref<UploadInstance>();
 
 const BASE_URL = "http://localhost:3000";
 
-interface TranslationItem {
-  id: string;
-  source: string;
-  target: {
-    "zh-CN": string;
-    "en-US": string;
-    "zh-HK": string;
-  };
-}
-
 const props = defineProps<{
   modelValue: boolean;
-  initialData?: TranslationItem;
 }>();
 
 const emit = defineEmits(["update:modelValue", "submit"]);
 
 const visible = ref(props.modelValue);
 const uploadResult = ref<any>(null);
+const deleting = ref(false);
 
 // 上传请求头
 const uploadHeaders = {
@@ -144,6 +135,12 @@ const handleError = (err: Error) => {
   ElMessage.error(`上传失败: ${err.message}`);
 };
 
+// 执行删除操作
+const handleDelete = () => {
+  deleting.value = true;
+  uploadRef.value?.submit();
+};
+
 const handleClose = () => {
   // 1. 清空文件列表
   uploadRef.value?.clearFiles();
@@ -151,14 +148,17 @@ const handleClose = () => {
   // 2. 清空上传结果
   uploadResult.value = null;
 
-  // 3. 关闭弹窗
+  // 3. 重置删除状态
+  deleting.value = false;
+
+  // 4. 关闭弹窗
   visible.value = false;
 };
 
 // 下载模板
 const downloadTemplate = async () => {
   try {
-    const response = await fetch(`${BASE_URL}/api/downloadUpdateTemplate`, {
+    const response = await fetch(`${BASE_URL}/api/downloadDeleteTemplate`, {
       headers: {
         'Authorization': `Bearer ${tokenManager.getToken()}`
       }
@@ -172,7 +172,7 @@ const downloadTemplate = async () => {
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.setAttribute("download", "批量修改翻译项模板.xlsx");
+    link.setAttribute("download", "批量删除翻译项模板.xlsx");
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
