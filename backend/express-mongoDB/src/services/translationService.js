@@ -574,7 +574,7 @@ class TranslationService {
         if (!translation) {
           results.errors.push({
             row: i + 2,
-            message: `翻译项 "${source}" 在数据库中不存在`
+            message: `翻译项在数据库中不存在`
           });
           continue;
         }
@@ -600,7 +600,7 @@ class TranslationService {
     return {
       code: 200,
       data: results,
-      message: `批量获取 ${results.total} 条数据，成功获取 ${results.success} 条数据，失败 ${results.errors.length} 条数据`
+      message: `批量获取 ${results.total} 条数据，成功获取 ${results.success} 条翻译项ID，失败获取 ${results.errors.length} 条翻译项ID`
     };
   }
 

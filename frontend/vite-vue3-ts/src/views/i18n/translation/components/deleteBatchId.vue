@@ -12,6 +12,7 @@
       :before-upload="beforeUpload"
       :on-success="handleSuccess"
       :on-error="handleError"
+      :on-remove="handleRemove"
       drag
       :action="`${BASE_URL}/api/batchDelete`"
       :headers="uploadHeaders"
@@ -42,8 +43,8 @@
     <div v-if="uploadResult" class="upload-result">
       <el-divider content-position="left">删除结果</el-divider>
       <el-alert
-        :title="uploadResult.message"
-        :type="uploadResult.success > 0 ? 'success' : 'error'"
+        :title="responseMessage"
+        :type="uploadResult.errors.length > 0 ? 'warning' : 'success'"
         show-icon
         :closable="false"
       />
@@ -58,8 +59,7 @@
     </div>
 
     <template #footer>
-      <el-button @click="handleClose">取消</el-button>
-      <el-button type="danger" @click="handleDelete" :loading="deleting">删除</el-button>
+      <el-button @click="handleClose">关闭</el-button>
     </template>
   </el-dialog>
 </template>
@@ -83,7 +83,7 @@ const emit = defineEmits(["update:modelValue", "submit"]);
 
 const visible = ref(props.modelValue);
 const uploadResult = ref<any>(null);
-const deleting = ref(false);
+const responseMessage = ref<string>('');
 
 // 上传请求头
 const uploadHeaders = {
@@ -120,16 +120,9 @@ interface UploadResponse {
 
 // 处理成功响应
 const handleSuccess = (response: UploadResponse) => {
-  if (response.status === 200) {
-    uploadResult.value = response.data;
-    ElMessage({
-      message: response.message,
-      type: response.data.success > 0 ? "success" : "warning",
-    });
-    emit("submit");
-  } else {
-    ElMessage.error(response.message);
-  }
+  uploadResult.value = response.data;
+  responseMessage.value = response.message;
+  emit("submit");
 };
 
 // 错误处理
@@ -137,10 +130,10 @@ const handleError = (err: Error) => {
   ElMessage.error(`上传失败: ${err.message}`);
 };
 
-// 执行删除操作
-const handleDelete = () => {
-  deleting.value = true;
-  uploadRef.value?.submit();
+const handleRemove = () => {
+  // 当用户删除文件时，清空上传结果
+  uploadResult.value = null;
+  responseMessage.value = '';
 };
 
 const handleClose = () => {
@@ -150,10 +143,7 @@ const handleClose = () => {
   // 2. 清空上传结果
   uploadResult.value = null;
 
-  // 3. 重置删除状态
-  deleting.value = false;
-
-  // 4. 关闭弹窗
+  // 3. 关闭弹窗
   visible.value = false;
 };
 

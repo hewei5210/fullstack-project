@@ -348,7 +348,7 @@ onMounted(() => {
   margin: 10px;
   padding: 20px;
   background-color: #fff;
-  min-height: 600px;
+  min-height: 650px;
 }
 
 .action-bar {

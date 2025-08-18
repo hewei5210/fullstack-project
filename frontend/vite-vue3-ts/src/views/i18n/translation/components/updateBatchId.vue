@@ -42,8 +42,8 @@
     <div v-if="uploadResult" class="upload-result">
       <el-divider content-position="left">修改结果</el-divider>
       <el-alert
-        :title="uploadResult.message"
-        :type="uploadResult.success > 0 ? 'success' : 'error'"
+        :title="responseMessage"
+        :type="uploadResult.errors.length > 0 ? 'warning' : 'success'"
         show-icon
         :closable="false"
       />
@@ -64,7 +64,6 @@
 </template>
 
 <script setup lang="ts">
-import { http } from "../../../../net/http";
 import { ref, watch } from "vue";
 import { ElMessage } from "element-plus";
 import { UploadFilled } from "@element-plus/icons-vue";
@@ -94,6 +93,7 @@ const emit = defineEmits(["update:modelValue", "submit"]);
 
 const visible = ref(props.modelValue);
 const uploadResult = ref<any>(null);
+const responseMessage = ref<string>('');
 
 // 上传请求头
 const uploadHeaders = {
@@ -130,16 +130,9 @@ interface UploadResponse {
 
 // 处理成功响应
 const handleSuccess = (response: UploadResponse) => {
-  if (response.status === 200) {
-    uploadResult.value = response.data;
-    ElMessage({
-      message: response.message,
-      type: response.data.success > 0 ? "success" : "warning",
-    });
-    emit("submit");
-  } else {
-    ElMessage.error(response.message);
-  }
+  uploadResult.value = response.data;
+  responseMessage.value = response.message;
+  emit("submit");
 };
 
 // 错误处理

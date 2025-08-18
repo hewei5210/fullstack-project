@@ -1,8 +1,4 @@
 {
-  "ccfe-000000001": "Enterprise ID",
-  "ccfe-000000002": "Please enter the enterprise ID",
-  "ccfe-000000003": "Modifying the enterprise ID will affect the login accounts of all users. After modification, you must use an account with a new suffix to successfully log in to the client. For example, if the original login account is test01.ABCD and the enterprise ID is updated to AAAA, the login account will be updated to test01.AAAA",
-  "ccfe-000000004": "cancel",
   "ccfe-000000005": "confirm",
   "ccfe-000000006": "set up",
   "ccfe-000000007": "modify",
@@ -2918,6 +2914,8 @@
   "ccfe-000002917": "Subnet Info,",
   "ccfe-000002918": "Local Peer Route,",
   "ccfe-000002919": "Peer Connection Route,",
+  "ccfe-000002920": "Test Translation 1",
+  "ccfe-000002921": "Test Translation 2",
   "ccfe-000004740": "Simplified Chinese",
   "ccfe-000004741": "Traditional Chinese",
   "ccfe-000004749": "Logout successful",

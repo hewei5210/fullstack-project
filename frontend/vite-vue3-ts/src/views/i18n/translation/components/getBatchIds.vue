@@ -12,6 +12,7 @@
       :before-upload="beforeUpload"
       :on-success="handleSuccess"
       :on-error="handleError"
+      :on-remove="handleRemove"
       drag
       :action="`${BASE_URL}/api/batchGetIds`"
       :headers="uploadHeaders"
@@ -42,8 +43,8 @@
     <div v-if="uploadResult" class="upload-result">
       <el-divider content-position="left">获取结果</el-divider>
       <el-alert
-        :title="uploadResult.message"
-        :type="uploadResult.success > 0 ? 'success' : 'error'"
+        :title="responseMessage"
+        :type="uploadResult.errors.length > 0 ? 'warning' : 'success'"
         show-icon
         :closable="false"
       />
@@ -90,7 +91,6 @@
 </template>
 
 <script setup lang="ts">
-import { http } from "../../../../net/http";
 import { ref, watch } from "vue";
 import { ElMessage } from "element-plus";
 import { UploadFilled, Download } from "@element-plus/icons-vue";
@@ -120,6 +120,7 @@ const emit = defineEmits(["update:modelValue", "submit"]);
 
 const visible = ref(props.modelValue);
 const uploadResult = ref<any>(null);
+const responseMessage = ref<string>('');
 const exporting = ref(false);
 
 // 上传请求头
@@ -160,19 +161,20 @@ interface UploadResponse {
 const handleSuccess = (response: UploadResponse) => {
   if (response.status === 200) {
     uploadResult.value = response.data;
-    ElMessage({
-      message: response.message,
-      type: response.data.success > 0 ? "success" : "warning",
-    });
+    responseMessage.value = response.message;
     emit("submit");
-  } else {
-    ElMessage.error(response.message);
-  }
+  } 
 };
 
 // 错误处理
 const handleError = (err: Error) => {
   ElMessage.error(`上传失败: ${err.message}`);
+};
+
+const handleRemove = () => {
+  // 当用户删除文件时，清空上传结果
+  uploadResult.value = null;
+  responseMessage.value = '';
 };
 
 const handleClose = () => {
