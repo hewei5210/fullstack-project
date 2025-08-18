@@ -50,7 +50,7 @@ const handleLogin = async () => {
       user: res.data.data.user
     });
     
-    ElMessage.success("登录成功");
+    // ElMessage.success("登录成功");
     router.push("/console/home"); // 跳转至后台管理页
   } catch (error) {
     console.error("登录失败", error);
