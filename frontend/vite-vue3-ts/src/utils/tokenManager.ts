@@ -102,24 +102,74 @@ class TokenManager {
   // 获取有效的token（如果即将过期则自动刷新）
   async getValidToken(): Promise<string | null> {
     const token = this.getToken();
+    const refreshToken = this.getRefreshToken();
+    
     if (!token) {
-      return null; // 返回null而不是抛出错误
+      return null;
     }
 
-    // 检查token是否即将过期
-    if (this.isTokenExpiringSoon(token)) {
-      try {
-        const tokenData = await this.refreshToken();
-        return tokenData.token;
-      } catch (error) {
-        // 刷新失败，清除所有token并跳转到登录页
+    // 检查token是否即将过期或已过期
+    if (this.isTokenExpiringSoon(token) || this.isTokenExpired(token)) {
+      // 如果有refreshToken，尝试刷新
+      if (refreshToken) {
+        try {
+          const tokenData = await this.refreshToken();
+          return tokenData.token;
+        } catch (error) {
+          console.error('Token刷新失败:', error);
+          // 刷新失败，清除所有token
+          this.clearTokens();
+          return null;
+        }
+      } else {
+        // 没有refreshToken，清除token
         this.clearTokens();
-        window.location.href = '/login';
-        throw new Error('token刷新失败，请重新登录');
+        return null;
       }
     }
 
     return token;
+  }
+
+  // 检查token是否已过期
+  isTokenExpired(token: string): boolean {
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      const now = Math.floor(Date.now() / 1000);
+      return payload.exp < now;
+    } catch (error) {
+      return true; // 解析失败认为已过期
+    }
+  }
+
+  // 检查token状态（用于调试）
+  getTokenStatus() {
+    const token = this.getToken();
+    const refreshToken = this.getRefreshToken();
+    
+    if (!token && !refreshToken) {
+      return { status: 'no_tokens', message: '没有token和refreshToken' };
+    }
+    
+    if (!token && refreshToken) {
+      return { status: 'no_token_has_refresh', message: '没有token但有refreshToken' };
+    }
+    
+    if (token && !refreshToken) {
+      return { status: 'has_token_no_refresh', message: '有token但没有refreshToken' };
+    }
+    
+    if (token && refreshToken) {
+      if (this.isTokenExpired(token)) {
+        return { status: 'token_expired_has_refresh', message: 'token已过期但有refreshToken' };
+      }
+      if (this.isTokenExpiringSoon(token)) {
+        return { status: 'token_expiring_soon', message: 'token即将过期' };
+      }
+      return { status: 'valid', message: 'token有效' };
+    }
+    
+    return { status: 'unknown', message: '未知状态' };
   }
 }
 

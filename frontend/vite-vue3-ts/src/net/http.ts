@@ -35,11 +35,10 @@ service.interceptors.request.use(
       if (token) {
         config.headers!.Authorization = `Bearer ${token}`;
       }
+      // 如果没有token，不添加Authorization头，让响应拦截器处理401错误
     } catch (error) {
       console.error('Token获取失败:', error);
-      // 如果获取token失败，清除token并跳转到登录页
-      tokenManager.clearTokens();
-      window.location.href = '/login';
+      // 不在这里清除token和跳转，让响应拦截器处理
     }
 
     return config;
@@ -62,15 +61,26 @@ service.interceptors.response.use(
       originalRequest._retry = true;
       
       try {
-        // 尝试刷新token
-        await tokenManager.refreshToken();
+        // 检查是否有refreshToken
+        const refreshToken = tokenManager.getRefreshToken();
+        if (refreshToken) {
+          // 尝试刷新token
+          await tokenManager.refreshToken();
+          
+          // 重新发送原始请求
+          const newToken = await tokenManager.getValidToken();
+          if (newToken) {
+            originalRequest.headers.Authorization = `Bearer ${newToken}`;
+            return service(originalRequest);
+          }
+        }
         
-        // 重新发送原始请求
-        const newToken = await tokenManager.getValidToken();
-        originalRequest.headers.Authorization = `Bearer ${newToken}`;
-        
-        return service(originalRequest);
+        // 没有refreshToken或刷新失败，清除token并跳转到登录页
+        tokenManager.clearTokens();
+        window.location.href = '/login';
+        return Promise.reject(error);
       } catch (refreshError) {
+        console.error('Token刷新失败:', refreshError);
         // 刷新失败，清除token并跳转到登录页
         tokenManager.clearTokens();
         window.location.href = '/login';

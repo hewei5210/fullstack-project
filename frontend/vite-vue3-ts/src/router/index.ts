@@ -70,28 +70,41 @@ const router = createRouter({
 });
 
 // 全局前置守卫（必须写在导出之前）
-router.beforeEach((to, _from, next) => {
+router.beforeEach(async (to, _from, next) => {
   // 设置页面标题
   if (to.meta?.title) {
     document.title = `${to.meta.title} - 前端工具平台`;
   }
 
-  const token = tokenManager.getToken();
-  const isAuthenticated = !!token;
-
-  // 已登录时禁止访问登录页（避免循环）
-  if (isAuthenticated && to.path === "/login") {
-    next("/console/home"); // 重定向到控制台首页
+  // 对于登录和刷新token的请求，直接通过
+  if (to.path === "/login" || to.path.includes('/refresh')) {
+    next();
     return;
   }
 
-  // 检查是否需要登录
-  if (!isAuthenticated && to.path.startsWith("/console")) {
+  try {
+    // 尝试获取有效的token（如果即将过期则自动刷新）
+    const token = await tokenManager.getValidToken();
+    const isAuthenticated = !!token;
+
+    // 已登录时禁止访问登录页（避免循环）
+    if (isAuthenticated && to.path === "/login") {
+      next("/console/home"); // 重定向到控制台首页
+      return;
+    }
+
+    // 检查是否需要登录
+    if (!isAuthenticated && to.path.startsWith("/console")) {
+      next("/login");
+      return;
+    }
+
+    next();
+  } catch (error) {
+    console.error('路由守卫认证检查失败:', error);
+    // 认证失败，跳转到登录页
     next("/login");
-    return;
   }
-
-  next();
 });
 
 export default router;
