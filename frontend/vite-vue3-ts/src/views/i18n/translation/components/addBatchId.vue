@@ -12,6 +12,7 @@
       :before-upload="beforeUpload"
       :on-success="handleSuccess"
       :on-error="handleError"
+      :on-remove="handleRemove"
       drag
       :action="`${BASE_URL}/api/batchUpload`"
       :headers="uploadHeaders"
@@ -31,6 +32,9 @@
           >
             点击下载Excel模板
           </el-link>
+          <span style="font-size: small; margin-left: 10px">
+            按照模板格式填写新增翻译项，并上传模板。
+          </span>
         </div>
       </template>
     </el-upload>
@@ -39,16 +43,16 @@
     <div v-if="uploadResult" class="upload-result">
       <el-divider content-position="left">上传结果</el-divider>
       <el-alert
-        :title="uploadResult.message"
-        :type="uploadResult.success > 0 ? 'success' : 'error'"
+        :title="responseMessage"
+        :type="uploadResult.errors.length > 0 ? 'warning' : 'success'"
         show-icon
         :closable="false"
       />
       
-      <div v-if="uploadResult.errors && uploadResult.errors.length > 0" class="error-list">
+      <div v-if="uploadResult.errors.length > 0" class="error-list">
         <h4>错误详情：</h4>
         <el-table :data="uploadResult.errors" size="small" max-height="200">
-          <el-table-column prop="row" label="行号" width="80" />
+          <el-table-column prop="row" label="行号" />
           <el-table-column prop="message" label="错误信息" />
         </el-table>
       </div>
@@ -61,7 +65,6 @@
 </template>
 
 <script setup lang="ts">
-import { http } from "../../../../net/http";
 import { ref, watch } from "vue";
 import { ElMessage } from "element-plus"; // Import ElMessage as a value
 import { UploadFilled } from "@element-plus/icons-vue";
@@ -91,6 +94,7 @@ const emit = defineEmits(["update:modelValue", "submit"]);
 
 const visible = ref(props.modelValue);
 const uploadResult = ref<any>(null);
+const responseMessage = ref<string>('');
 
 // 上传请求头
 const uploadHeaders = {
@@ -133,21 +137,27 @@ interface UploadResponse {
 }
 // 处理成功响应
 const handleSuccess = (response: UploadResponse) => {
-  if (response.status === 200) {
+  console.log('response', response);
+
     uploadResult.value = response.data;
-    ElMessage({
-      message: response.message,
-      type: response.data.success > 0 ? "success" : "warning",
-    });
+    responseMessage.value = response.message;
+    // ElMessage({
+    //   message: response.message,
+    //   type: "success",
+    // });
     emit("submit");
-  } else {
-    ElMessage.error(response.message);
-  }
 };
 
 // 错误处理
-const handleError = (err: Error) => {
+const handleError = (err: any) => {
+  console.log('err', err);
   ElMessage.error(`上传失败: ${err.message}`);
+};
+
+const handleRemove = () => {
+  // 当用户删除文件时，清空上传结果
+  uploadResult.value = null;
+  responseMessage.value = '';
 };
 
 const handleClose = () => {
@@ -156,6 +166,7 @@ const handleClose = () => {
 
   // 2. 清空上传结果
   uploadResult.value = null;
+  responseMessage.value = '';
 
   // 3. 关闭弹窗
   visible.value = false;
@@ -202,12 +213,23 @@ const downloadTemplate = async () => {
   margin-top: 20px;
 }
 
+.upload-stats {
+  background-color: #f8f9fa;
+  padding: 15px;
+  border-radius: 6px;
+  border: 1px solid #e9ecef;
+}
+
 .error-list {
   margin-top: 15px;
 }
 
 .error-list h4 {
-  margin: 10px 0;
-  color: #f56c6c;
+  color: #dc3545;
+  margin-bottom: 10px;
+}
+
+.upload-demo {
+  margin-bottom: 20px;
 }
 </style>

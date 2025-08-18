@@ -110,8 +110,12 @@ router.post('/batchUpload', upload.single('file'), async (req, res) => {
     }
 
     const result = await translationService.batchImport(req.file.buffer, req.file.originalname);
-    res.status(200).json({
-      status: 200,
+    
+    // 根据结果代码返回相应的状态码
+    const statusCode = result.code === 200 ? 200 : 400;
+    
+    res.status(statusCode).json({
+      status: result.code,
       message: result.message,
       data: result.data
     });

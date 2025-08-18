@@ -31,6 +31,9 @@
           >
             点击下载Excel模板
           </el-link>
+          <span style="font-size: small; margin-left: 10px">
+            可以通过批量获取翻译项ID功能，批量获取所需修改翻译项的ID，便于批量修改翻译项。
+          </span>
         </div>
       </template>
     </el-upload>

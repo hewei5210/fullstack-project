@@ -31,6 +31,9 @@
           >
             点击下载Excel模板
           </el-link>
+          <span style="font-size: small; margin-left: 10px">
+            可以上传批量新增翻译项的Excel文件，获取新增翻译项的ID，便于之后的批量修改翻译项或者删除翻译项。
+          </span>
         </div>
       </template>
     </el-upload>

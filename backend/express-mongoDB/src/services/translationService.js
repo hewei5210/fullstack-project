@@ -186,7 +186,8 @@ class TranslationService {
       data: [],
       total: 0,
       success: 0,
-      errors: []
+      errors: [],
+      hasDuplicates: false // 标记是否存在重复问题
     };
 
     // 获取现有翻译项用于去重检查
@@ -194,18 +195,33 @@ class TranslationService {
     const existingSources = new Set(existingTranslations.map(item => item.source));
     const internalSet = new Set(); // 检查Excel内部重复
 
+    // 第一步：验证所有数据，检查是否有重复问题
+    const validData = [];
+    let hasDuplicateIssues = false;
+
     for (let i = 0; i < parsedData.data.length; i++) {
       const row = parsedData.data[i];
       results.total++;
 
       const cellValue = row.Source || row['翻译项'];
 
-      // 1. 优先检测Excel内部重复
+      // 检查必填字段
+      if (!cellValue || cellValue.trim() === '') {
+        results.errors.push({
+          row: i + 2,
+          message: '翻译项不能为空'
+        });
+        hasDuplicateIssues = true;
+        continue;
+      }
+
+      // 1. 检查Excel内部重复
       if (internalSet.has(cellValue)) {
         results.errors.push({
-          row: i + 2, // +2 因为跳过表头且数组从0开始
-          message: 'Excel内部重复'
+          row: i + 2,
+          message: 'Excel内部重复：该翻译项在表格中已存在'
         });
+        hasDuplicateIssues = true;
         continue;
       }
       internalSet.add(cellValue);
@@ -214,49 +230,70 @@ class TranslationService {
       if (existingSources.has(cellValue)) {
         results.errors.push({
           row: i + 2,
-          message: '翻译项已存在，无法重复添加'
+          message: '数据库中已存在：该翻译项在数据库中已存在'
         });
+        hasDuplicateIssues = true;
         continue;
       }
 
-      try {
-        // 自动生成新ID
-        const id = await this.generateNewId();
-        
-        const translation = new Translation({
-          id,
+      // 数据验证通过，添加到有效数据列表
+      validData.push({
+        rowIndex: i + 2,
+        data: {
           source: cellValue,
-          target: {
-            'zh-CN': cellValue,
-            'en-US': row['翻译项-英文'] || row['target(en-US)'] || '',
-            'zh-HK': row['翻译项-繁体'] || row['target(zh-HK)'] || ''
-          }
-        });
-
-        // 数据校验
-        if (!translation.id || !translation.source || !translation.target['zh-CN']) {
-          throw new Error('必填字段缺失');
+          'en-US': row['翻译项-英文'] || row['target(en-US)'] || '',
+          'zh-HK': row['翻译项-繁体'] || row['target(zh-HK)'] || ''
         }
-
-        results.data.push(translation);
-        results.success++;
-        
-        // 立即保存到数据库，避免ID重复
-        await translation.save();
-      } catch (error) {
-        results.errors.push({
-          row: i + 2,
-          message: error.message
-        });
-      }
+      });
     }
 
-    // 数据已经逐个保存，不需要批量插入
+    // 第二步：如果存在重复问题，不保存任何数据
+    if (hasDuplicateIssues) {
+      results.hasDuplicates = true;
+      return {
+        code: 200,
+        data: results,
+        message: `检测到重复问题，已阻止数据导入。共 ${results.total} 条数据，发现 ${results.errors.length} 个问题，请修正后重新导入。`
+      };
+    }
+
+    // 第三步：如果没有重复问题，批量保存所有有效数据
+    try {
+      for (const item of validData) {
+        try {
+          // 自动生成新ID
+          const id = await this.generateNewId();
+          
+          const translation = new Translation({
+            id,
+            source: item.data.source,
+            target: {
+              'zh-CN': item.data.source,
+              'en-US': item.data['en-US'],
+              'zh-HK': item.data['zh-HK']
+            }
+          });
+
+          // 保存到数据库
+          await translation.save();
+          
+          results.data.push(translation);
+          results.success++;
+        } catch (error) {
+          results.errors.push({
+            row: item.rowIndex,
+            message: `保存失败: ${error.message}`
+          });
+        }
+      }
+    } catch (error) {
+      throw new Error(`批量保存失败: ${error.message}`);
+    }
 
     return {
       code: 200,
       data: results,
-      message: `导入 ${results.total} 条数据，去除重复数据，成功导入${results.data.length}条数据，失败 ${results.errors.length} 条数据`
+      message: `导入成功！共 ${results.total} 条数据，成功导入 ${results.success} 条数据。`
     };
   }
 

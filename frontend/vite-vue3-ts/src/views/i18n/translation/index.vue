@@ -74,6 +74,8 @@
           v-model="searchContent"
           class="search-input"
           :placeholder="placeholderMap[select]"
+          clearable
+          @clear="handleClearSearch"
         >
           <template #prepend>
             <el-select v-model="select" class="search-select">
@@ -330,6 +332,11 @@ const showDeleteConfirm = (row: Translation) => {
 const handleSubmitSuccess = () => {
   getData(); // 调用现有的数据获取方法
   // ElMessage.success("列表已刷新");
+};
+
+const handleClearSearch = () => {
+  searchContent.value = "";
+  getData(); // 清空后自动刷新数据
 };
 
 onMounted(() => {
