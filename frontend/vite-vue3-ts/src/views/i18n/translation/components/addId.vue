@@ -58,6 +58,7 @@ import { http } from "../../../../net/http";
 import { ref, reactive, watch } from "vue";
 import { ElMessage } from "element-plus"; // Import ElMessage as a value
 import type { FormInstance, FormRules } from "element-plus";
+import { handleError } from "../../../../utils/errorHandler";
 
 interface TranslationItem {
   id: string;
@@ -104,25 +105,24 @@ const handleSubmit = async () => {
   try {
     await formRef.value?.validate();
     formData.target["zh-CN"] = formData.source;
-    http
-      .post("/api/addBing", {
-        source: formData.source,
-        target: formData.target,
-      })
-      .then(
-        () => {
-          ElMessage.success("添加成功");
-          emit("submit", formData);
-          visible.value = false;
-        },
-        (error) => {
-          // 显示具体的错误信息
-          const errorMessage = error.response?.data?.message || "添加失败";
-          ElMessage.error(errorMessage);
-        }
-      );
-  } catch (error) {
-    console.log("表单验证失败:", error);
+    
+    await http.post("/api/addBing", {
+      source: formData.source,
+      target: formData.target,
+    });
+    
+    ElMessage.success("添加成功");
+    emit("submit", formData);
+    visible.value = false;
+  } catch (error: any) {
+    // 表单验证错误
+    if (error.message && error.message.includes('验证')) {
+      console.log("表单验证失败:", error);
+      return;
+    }
+    
+    // 使用统一的错误处理
+    handleError(error, "添加失败");
   }
 };
 

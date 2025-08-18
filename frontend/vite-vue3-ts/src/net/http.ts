@@ -88,9 +88,16 @@ service.interceptors.response.use(
       }
     }
     
-    console.error("HTTP Error:", error);
-    const message = error.response?.data?.message || error.message || "请求失败";
-    ElMessage.error(message);
+    // 只在以下情况下显示错误消息，避免与组件中的错误处理重复：
+    // 1. 网络错误（无response）
+    // 2. 服务器错误（5xx）
+    // 3. 其他非业务错误
+    if (!error.response || error.response.status >= 500) {
+      console.error("HTTP Error:", error);
+      const message = error.response?.data?.message || error.message || "网络请求失败";
+      ElMessage.error(message);
+    }
+    
     return Promise.reject(error);
   }
 );

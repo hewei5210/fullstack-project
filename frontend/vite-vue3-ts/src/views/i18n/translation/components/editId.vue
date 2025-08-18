@@ -65,6 +65,7 @@
 import { http } from "../../../../net/http";
 import { ref, watch } from "vue";
 import { ElMessage } from "element-plus";
+import { handleError } from "../../../../utils/errorHandler";
 
 interface Translation {
   id: string;
@@ -110,22 +111,19 @@ const handleCancel = () => {
   emit("update:model-value", false);
 };
 
-const handleSubmit = () => {
-  http
-    .put("/api/updateBing", {
+const handleSubmit = async () => {
+  try {
+    await http.put("/api/updateBing", {
       id: localEditItem.value.id,
       source: localEditItem.value.target["zh-CN"],
       target: localEditItem.value.target,
-    })
-    .then(
-      () => {
-        ElMessage.success("编辑成功");
-        emit("update:model-value", false);
-        emit("submit", localEditItem.value);
-      },
-      () => {
-        ElMessage.error("编辑失败");
-      }
-    );
+    });
+    
+    ElMessage.success("编辑成功");
+    emit("update:model-value", false);
+    emit("submit", localEditItem.value);
+  } catch (error: any) {
+    handleError(error, "编辑失败");
+  }
 };
 </script>

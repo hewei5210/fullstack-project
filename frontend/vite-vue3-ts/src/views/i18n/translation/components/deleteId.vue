@@ -20,7 +20,8 @@
   import { http } from "../../../../net/http";
   import { ref, watch } from "vue";
   import { ElMessage } from "element-plus";
-  
+  import { handleError } from "../../../../utils/errorHandler";
+
   interface Translation {
     id: string;
     target: Record<string, string>;
@@ -61,8 +62,8 @@
       ElMessage.success("删除成功");
       visible.value = false;
       emit("submit");
-    } catch (error) {
-      ElMessage.error("删除失败");
+    } catch (error: any) {
+      handleError(error, "删除失败");
     } finally {
       deleteLoading.value = false;
     }
