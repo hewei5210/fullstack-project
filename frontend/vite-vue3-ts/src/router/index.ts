@@ -33,7 +33,7 @@ const routes = [
           },
           {
             path: "script",
-            component: () => import("@/views/i18n/script.vue"),
+            component: () => import("@/views/i18n/script/index.vue"),
             meta: { title: "国际化脚本" },
           },
           {
