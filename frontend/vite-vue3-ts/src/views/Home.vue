@@ -1,6 +1,6 @@
 <template>
   <div class="container">
-    <h2>欢迎使用国际化平台</h2>
+    <h2>欢迎使用前端工具平台</h2>
     <p>这是一个基于 Vue 3 + TypeScript + Express + MongoDB 的全栈项目</p>
     <ul>
       <li>在这个项目中可以随意的使用最新的技术</li>

@@ -76,7 +76,7 @@
             <el-icon><Plus /></el-icon>
           </div>
           <h3>更多插件</h3>
-          <p>我们正在开发更多实用的国际化插件</p>
+          <p>我们正在开发更多实用的插件</p>
           <div class="coming-soon">
             <span>敬请期待</span>
           </div>
