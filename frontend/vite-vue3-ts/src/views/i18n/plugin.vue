@@ -1,238 +1,101 @@
 <template>
   <div class="container">
-    <h2>开发框架插件</h2>
-    <p>为各种主流开发框架提供国际化插件，简化集成过程。</p>
-
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-card class="plugin-item">
-              <template #header>
-                <div class="plugin-header">
-                  <el-icon><VueIcon /></el-icon>
-                  <span>Vue.js 插件</span>
-                </div>
-              </template>
-
-              <div class="plugin-info">
-                <h4>vue-i18n-helper</h4>
-                <p>
-                  Vue.js
-                  国际化助手插件，支持自动提取文本、热重载、类型检查等功能。
-                </p>
-
-                <div class="plugin-features">
-                  <el-tag size="small" type="success">自动提取</el-tag>
-                  <el-tag size="small" type="warning">热重载</el-tag>
-                  <el-tag size="small" type="info">类型检查</el-tag>
-                </div>
-
-                <div class="plugin-actions">
-                  <el-button
-                    type="primary"
-                    size="small"
-                    @click="installPlugin('vue')"
-                  >
-                    安装插件
-                  </el-button>
-                  <el-button size="small" @click="viewDocs('vue')">
-                    查看文档
-                  </el-button>
-                </div>
-              </div>
-            </el-card>
-          </el-col>
-
-          <el-col :span="12">
-            <el-card class="plugin-item">
-              <template #header>
-                <div class="plugin-header">
-                  <el-icon><ReactIcon /></el-icon>
-                  <span>React 插件</span>
-                </div>
-              </template>
-
-              <div class="plugin-info">
-                <h4>react-i18n-toolkit</h4>
-                <p>
-                  React 国际化工具包，提供 Hook、组件、工具函数等完整解决方案。
-                </p>
-
-                <div class="plugin-features">
-                  <el-tag size="small" type="success">Hook 支持</el-tag>
-                  <el-tag size="small" type="warning">组件封装</el-tag>
-                  <el-tag size="small" type="info">工具函数</el-tag>
-                </div>
-
-                <div class="plugin-actions">
-                  <el-button
-                    type="primary"
-                    size="small"
-                    @click="installPlugin('react')"
-                  >
-                    安装插件
-                  </el-button>
-                  <el-button size="small" @click="viewDocs('react')">
-                    查看文档
-                  </el-button>
-                </div>
-              </div>
-            </el-card>
-          </el-col>
-        </el-row>
-
-        <el-row :gutter="20" style="margin-top: 20px">
-          <el-col :span="12">
-            <el-card class="plugin-item">
-              <template #header>
-                <div class="plugin-header">
-                  <el-icon><AngularIcon /></el-icon>
-                  <span>Angular 插件</span>
-                </div>
-              </template>
-
-              <div class="plugin-info">
-                <h4>angular-i18n-extension</h4>
-                <p>
-                  Angular 国际化扩展，集成 Angular 内置 i18n
-                  功能，提供增强工具。
-                </p>
-
-                <div class="plugin-features">
-                  <el-tag size="small" type="success">内置集成</el-tag>
-                  <el-tag size="small" type="warning">增强工具</el-tag>
-                  <el-tag size="small" type="info">CLI 支持</el-tag>
-                </div>
-
-                <div class="plugin-actions">
-                  <el-button
-                    type="primary"
-                    size="small"
-                    @click="installPlugin('angular')"
-                  >
-                    安装插件
-                  </el-button>
-                  <el-button size="small" @click="viewDocs('angular')">
-                    查看文档
-                  </el-button>
-                </div>
-              </div>
-            </el-card>
-          </el-col>
-
-          <el-col :span="12">
-            <el-card class="plugin-item">
-              <template #header>
-                <div class="plugin-header">
-                  <el-icon><NodeIcon /></el-icon>
-                  <span>Node.js 插件</span>
-                </div>
-              </template>
-
-              <div class="plugin-info">
-                <h4>node-i18n-middleware</h4>
-                <p>Node.js 国际化中间件，支持服务端渲染、API 国际化等功能。</p>
-
-                <div class="plugin-features">
-                  <el-tag size="small" type="success">中间件</el-tag>
-                  <el-tag size="small" type="warning">SSR 支持</el-tag>
-                  <el-tag size="small" type="info">API 国际化</el-tag>
-                </div>
-
-                <div class="plugin-actions">
-                  <el-button
-                    type="primary"
-                    size="small"
-                    @click="installPlugin('node')"
-                  >
-                    安装插件
-                  </el-button>
-                  <el-button size="small" @click="viewDocs('node')">
-                    查看文档
-                  </el-button>
-                </div>
-              </div>
-            </el-card>
-          </el-col>
-        </el-row>
-
-        <div class="plugin-usage">
-          <h3>使用示例</h3>
-          <el-tabs v-model="activeExample" type="border-card">
-            <el-tab-pane label="Vue.js" name="vue">
-              <pre><code>{{ vueExample }}</code></pre>
-            </el-tab-pane>
-
-            <el-tab-pane label="React" name="react">
-              <pre><code>{{ reactExample }}</code></pre>
-            </el-tab-pane>
-          </el-tabs>
+    <div class="plugins-grid">
+      <!-- Vue-i18n 悬浮展示插件 -->
+      <div class="plugin-card">
+        <div class="plugin-header">
+          <div class="plugin-icon">
+            <img src="/logo.png" alt="Vue-i18n Hover Plugin" class="logo" />
+          </div>
+          <div class="plugin-info">
+            <h3 class="plugin-name">vue-i18n-hover</h3>
+            <p class="plugin-description">
+              这是一个vue-i18n代码悬浮展示中文的扩展。
+            </p>
+            <div class="plugin-tags">
+              <el-tag size="small" type="success">Vue.js</el-tag>
+              <el-tag size="small" type="warning">VS Code</el-tag>
+              <el-tag size="small" type="danger">内部使用</el-tag>
+            </div>
+          </div>
         </div>
+
+        <div class="plugin-content">
+          <div class="section">
+            <h4 class="section-title">
+              <el-icon><Download /></el-icon>
+              安装
+            </h4>
+            <p>在 VS Code 中搜索并安装 <code>"vue-i18n-hover"</code></p>
+            <div class="install-steps">
+              <div class="step">1. 打开 VS Code</div>
+              <div class="step">2. 按 <kbd>Ctrl+Shift+X</kbd> 打开扩展</div>
+              <div class="step">3. 搜索 "vue-i18n-hover"</div>
+              <div class="step">4. 点击安装</div>
+            </div>
+          </div>
+
+          <div class="section">
+            <h4 class="section-title">
+              <el-icon><VideoPlay /></el-icon>
+              使用
+            </h4>
+            <div class="usage-steps">
+              <div class="step">1. 打开命令面板（<kbd>Ctrl+Shift+P</kbd>）</div>
+              <div class="step">2. 输入并选择 <code>vue-i18n-hover</code></div>
+            </div>
+          </div>
+
+          <div class="section">
+            <h4 class="section-title">
+              <el-icon><Star /></el-icon>
+              功能特性
+            </h4>
+            <div class="features-list">
+              <div class="feature-item">
+                <el-icon><View /></el-icon>
+                <span>悬浮展示中文翻译</span>
+              </div>
+              <div class="feature-item">
+                <el-icon><Document /></el-icon>
+                <span>智能识别 i18n 键值</span>
+              </div>
+              <div class="feature-item">
+                <el-icon><Refresh /></el-icon>
+                <span>实时更新翻译</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 预留其他插件位置 -->
+      <div class="plugin-placeholder">
+        <div class="placeholder-content">
+          <div class="placeholder-icon">
+            <el-icon><Plus /></el-icon>
+          </div>
+          <h3>更多插件</h3>
+          <p>我们正在开发更多实用的国际化插件</p>
+          <div class="coming-soon">
+            <span>敬请期待</span>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
-import { ElMessage } from "element-plus";
-import { 
-  Platform, 
-  Connection, 
-  Monitor,
-  Setting
+import {
+  Download,
+  VideoPlay,
+  Star,
+  View,
+  Document,
+  Refresh,
+  Plus
 } from "@element-plus/icons-vue";
-
-// 使用 Element Plus 内置图标作为替代
-const VueIcon = Platform;
-const ReactIcon = Connection;
-const AngularIcon = Monitor;
-const NodeIcon = Setting;
-
-const activeExample = ref("vue");
-
-// 代码示例
-const vueExample = `// main.js
-import { createApp } from 'vue'
-import { createI18n } from 'vue-i18n'
-import i18nHelper from 'vue-i18n-helper'
-
-const app = createApp(App)
-const i18n = createI18n({
-  locale: 'zh-CN',
-  messages: {
-    'zh-CN': zhCN,
-    'en-US': enUS
-  }
-})
-
-app.use(i18n)
-app.use(i18nHelper)
-app.mount('#app')`;
-
-const reactExample = `// App.jsx
-import { I18nProvider } from 'react-i18n-toolkit'
-import { useTranslation } from 'react-i18n-toolkit'
-
-function App() {
-  return (
-    <I18nProvider locale="zh-CN">
-      <MyComponent />
-    </I18nProvider>
-  )
-}
-
-function MyComponent() {
-  const { t } = useTranslation()
-  return <div>{t('hello.world')}</div>
-}`;
-
-const installPlugin = (framework: string) => {
-  console.log(`安装 ${framework} 插件`);
-  ElMessage.success(`${framework} 插件安装功能开发中...`);
-};
-
-const viewDocs = (framework: string) => {
-  console.log(`查看 ${framework} 文档`);
-  ElMessage.info(`${framework} 文档查看功能开发中...`);
-};
 </script>
 
 <style scoped>
@@ -243,58 +106,282 @@ const viewDocs = (framework: string) => {
   min-height: 600px;
 }
 
-.plugin-item {
-  margin-bottom: 20px;
-  height: 100%;
+.plugins-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: 20px;
+  align-items: start;
+}
+
+.plugin-card {
+  border: 1px solid #e4e7ed;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.plugin-card:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px);
 }
 
 .plugin-header {
   display: flex;
   align-items: center;
-  gap: 8px;
+  padding: 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
 }
 
-.plugin-info h4 {
-  color: #409eff;
-  margin-bottom: 12px;
+.plugin-icon {
+  margin-right: 16px;
 }
 
-.plugin-features {
-  margin: 16px 0;
+.logo {
+  width: 50px;
+  height: 50px;
+  border-radius: 8px;
+  background: white;
+  padding: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
-.plugin-features .el-tag {
-  margin-right: 8px;
-  margin-bottom: 8px;
+.plugin-info {
+  flex: 1;
 }
 
-.plugin-actions {
-  margin-top: 16px;
+.plugin-name {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0 0 8px 0;
+  color: white;
 }
 
-.plugin-actions .el-button {
-  margin-right: 12px;
+.plugin-description {
+  font-size: 14px;
+  margin: 0 0 12px 0;
+  opacity: 0.9;
+  line-height: 1.4;
 }
 
-.plugin-usage {
-  margin-top: 40px;
+.plugin-tags {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
 }
 
-.plugin-usage h3 {
-  color: #606266;
+.plugin-tags .el-tag {
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  font-size: 11px;
+}
+
+.plugin-content {
+  padding: 20px;
+}
+
+.section {
   margin-bottom: 20px;
 }
 
-.plugin-usage pre {
-  background-color: #f5f7fa;
-  padding: 16px;
-  border-radius: 4px;
-  overflow-x: auto;
+.section:last-child {
+  margin-bottom: 0;
 }
 
-.plugin-usage code {
-  font-family: "Courier New", monospace;
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   font-size: 14px;
+  font-weight: 600;
+  color: #303133;
+  margin: 0 0 12px 0;
+  padding-bottom: 6px;
+  border-bottom: 1px solid #f0f2f5;
+}
+
+.section-title .el-icon {
+  font-size: 16px;
+  color: #409eff;
+}
+
+.section p {
+  margin: 0 0 12px 0;
+  font-size: 13px;
+  color: #606266;
+  line-height: 1.5;
+}
+
+.section code {
+  background: #f5f7fa;
+  padding: 2px 4px;
+  border-radius: 3px;
+  font-family: "Monaco", "Menlo", "Ubuntu Mono", monospace;
+  color: #e6a23c;
+  font-size: 12px;
+}
+
+.install-steps,
+.usage-steps {
+  margin-top: 12px;
+}
+
+.step {
+  font-size: 12px;
+  color: #606266;
+  margin-bottom: 6px;
+  padding: 6px 8px;
+  background: #f8f9fa;
+  border-radius: 4px;
+  border-left: 3px solid #409eff;
+}
+
+.features-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.feature-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #606266;
+}
+
+.feature-item .el-icon {
+  color: #409eff;
+  font-size: 14px;
+}
+
+.plugin-placeholder {
+  border: 2px dashed #e4e7ed;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #f8f9fa 0%, #f0f2f5 100%);
+  min-height: 300px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.plugin-placeholder::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(45deg, transparent 30%, rgba(64, 158, 255, 0.1) 50%, transparent 70%);
+  animation: shimmer 3s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%) translateY(-100%) rotate(45deg);
+  }
+  100% {
+    transform: translateX(100%) translateY(100%) rotate(45deg);
+  }
+}
+
+.plugin-placeholder:hover {
+  border-color: #409eff;
+  background: linear-gradient(135deg, #f0f9ff 0%, #e6f7ff 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(64, 158, 255, 0.1);
+}
+
+.placeholder-content {
+  text-align: center;
+  color: #606266;
+  position: relative;
+  z-index: 1;
+}
+
+.placeholder-icon {
+  margin-bottom: 16px;
+}
+
+.placeholder-icon .el-icon {
+  font-size: 48px;
+  color: #409eff;
+  opacity: 0.6;
+  transition: all 0.3s ease;
+}
+
+.plugin-placeholder:hover .placeholder-icon .el-icon {
+  opacity: 1;
+  transform: scale(1.1);
+}
+
+.placeholder-content h3 {
+  margin: 0 0 8px 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #303133;
+}
+
+.placeholder-content p {
+  margin: 0 0 16px 0;
+  font-size: 14px;
+  color: #606266;
+  line-height: 1.5;
+}
+
+.coming-soon {
+  display: inline-block;
+  padding: 6px 16px;
+  background: rgba(64, 158, 255, 0.1);
+  border: 1px solid rgba(64, 158, 255, 0.2);
+  border-radius: 20px;
+  color: #409eff;
+  font-size: 12px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.plugin-placeholder:hover .coming-soon {
+  background: rgba(64, 158, 255, 0.2);
+  border-color: rgba(64, 158, 255, 0.3);
+  transform: scale(1.05);
+}
+
+kbd {
+  background: #f5f7fa;
+  border: 1px solid #d3d4d6;
+  border-radius: 3px;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.2);
+  color: #333;
+  display: inline-block;
+  font-size: 10px;
   line-height: 1.4;
+  margin: 0 0.1em;
+  padding: 0.1em 0.4em;
+  white-space: nowrap;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .plugins-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .plugin-header {
+    flex-direction: column;
+    text-align: center;
+    padding: 16px;
+  }
+  
+  .plugin-icon {
+    margin-right: 0;
+    margin-bottom: 12px;
+  }
 }
 </style>
