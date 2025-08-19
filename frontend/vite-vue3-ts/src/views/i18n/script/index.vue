@@ -135,12 +135,18 @@ import {
   FullScreen,
   Close,
 } from "@element-plus/icons-vue";
+import hljs from 'highlight.js/lib/core';
+import javascript from 'highlight.js/lib/languages/javascript';
+import 'highlight.js/styles/github.css';
 
 // 导入脚本内容
 import extractScriptContent from "./js/extractScript.js?raw";
 import setScriptContent from "./js/set.js?raw";
 
 
+
+// 注册JavaScript语言
+hljs.registerLanguage('javascript', javascript);
 
 const activeTab = ref("extract");
 const copying = ref(false);
@@ -170,8 +176,13 @@ const loadScripts = () => {
 
 // 应用语法高亮
 const applySyntaxHighlighting = () => {
-  // 暂时禁用语法高亮，确保显示原始内容
-  // 这样可以保证extractScript.js文件的内容完整显示
+  const codeElements = document.querySelectorAll(".language-javascript");
+  codeElements.forEach((codeElement) => {
+    // 使用highlight.js进行语法高亮
+    if (codeElement instanceof HTMLElement) {
+      hljs.highlightElement(codeElement);
+    }
+  });
 };
 
 // 复制脚本
@@ -427,9 +438,11 @@ onUnmounted(() => {
 }
 
 /* 代码显示样式 */
-.code-content code.language-javascript {
-  color: #333;
+.code-content code {
   font-family: "Monaco", "Menlo", "Ubuntu Mono", "Consolas", "Liberation Mono", monospace;
+  background: transparent !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
 }
 
 /* 滚动条样式 */
