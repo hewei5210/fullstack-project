@@ -19,32 +19,17 @@
         </div>
       </el-tab-pane>
 
-      <el-tab-pane label="资源生成脚本" name="generate">
+      <el-tab-pane label="Excel文件去重" name="set">
         <div class="script-section">
-          <h3>多语言资源生成脚本</h3>
+          <h3>Excel文件去重</h3>
           <div class="script-header">
-            <el-button type="primary" @click="copyScript('generate')" :loading="copying">
+            <el-button type="primary" @click="copyScript('set')" :loading="copying">
               <el-icon><CopyDocument /></el-icon>
               复制脚本
             </el-button>
           </div>
           <el-card class="code-card">
-            <pre><code>{{ generateScript }}</code></pre>
-          </el-card>
-        </div>
-      </el-tab-pane>
-
-      <el-tab-pane label="批量处理脚本" name="batch">
-        <div class="script-section">
-          <h3>批量翻译处理脚本</h3>
-          <div class="script-header">
-            <el-button type="primary" @click="copyScript('batch')" :loading="copying">
-              <el-icon><CopyDocument /></el-icon>
-              复制脚本
-            </el-button>
-          </div>
-          <el-card class="code-card">
-            <pre><code>{{ batchScript }}</code></pre>
+            <pre><code>{{ setScript }}</code></pre>
           </el-card>
         </div>
       </el-tab-pane>
@@ -58,24 +43,21 @@ import { ElMessage } from "element-plus";
 import { CopyDocument } from "@element-plus/icons-vue";
 
 // 导入脚本内容
-import extractScriptContent from './extractScript.js?raw';
-import generateScriptContent from './generateScript.js?raw';
-import batchScriptContent from './batchScript.js?raw';
+import extractScriptContent from './js/extractScript.js?raw';
+import setScriptContent from './js/set.js?raw';
 
 const activeTab = ref("extract");
 const copying = ref(false);
 
 // 脚本内容
 const extractScript = ref("");
-const generateScript = ref("");
-const batchScript = ref("");
+const setScript = ref("");
 
 // 加载脚本内容
 const loadScripts = () => {
   try {
     extractScript.value = extractScriptContent;
-    generateScript.value = generateScriptContent;
-    batchScript.value = batchScriptContent;
+    setScript.value = setScriptContent;
   } catch (error) {
     console.error('加载脚本失败:', error);
     ElMessage.error('加载脚本失败');
@@ -91,11 +73,8 @@ const copyScript = async (type: string) => {
       case 'extract':
         scriptContent = extractScript.value;
         break;
-      case 'generate':
-        scriptContent = generateScript.value;
-        break;
-      case 'batch':
-        scriptContent = batchScript.value;
+      case 'set':
+        scriptContent = setScript.value;
         break;
     }
 
