@@ -85,6 +85,16 @@ import { ref } from "vue";
 
 // 版本数据
 const versions = ref([
+{
+    version: "1.1.0",
+    date: "2025-08-19",
+    type: "",
+    description: "页面优化",
+    features: [],
+    improvements: ["国际化脚本页面优化", "国际化插件页面优化", "翻译项管理页面优化"],
+    fixes: [],
+    breaking: [],
+  },
   {
     version: "1.0.0",
     date: "2025-08-13",
