@@ -27,11 +27,13 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: {
-          'element-plus': ['element-plus'],
-          'vue-vendor': ['vue', 'vue-router']
+          'vue': ['vue'],
+          'vue-router': ['vue-router'],
+          'element-plus': ['element-plus']
         }
       }
-    }
+    },
+    chunkSizeWarningLimit: 1000
   },
   // 开发服务器优化
   server: {
