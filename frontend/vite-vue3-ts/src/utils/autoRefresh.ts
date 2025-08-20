@@ -1,7 +1,7 @@
 import tokenManager from './tokenManager';
 
 class AutoRefreshManager {
-  private refreshTimer: NodeJS.Timeout | null = null;
+  private refreshTimer: number | null = null;
   private readonly REFRESH_INTERVAL = 5 * 60 * 1000; // 5分钟检查一次
 
   // 启动自动刷新
