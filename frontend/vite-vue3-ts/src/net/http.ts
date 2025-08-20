@@ -13,7 +13,7 @@ import tokenManager from "../utils/tokenManager";
 
 // 创建axios实例
 const service: AxiosInstance = axios.create({
-  baseURL: "http://localhost:3000", // 直接使用后端地址
+  baseURL: import.meta.env.VITE_APP_API_BASE || "http://localhost:3000", // 使用环境变量
   withCredentials: true,
   timeout: 10000, // 请求超时时间
   headers: {
