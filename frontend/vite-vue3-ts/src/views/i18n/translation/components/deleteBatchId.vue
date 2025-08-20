@@ -73,7 +73,7 @@ import tokenManager from "../../../../utils/tokenManager";
 
 const uploadRef = ref<UploadInstance>();
 
-const BASE_URL = "http://localhost:3000";
+const BASE_URL = import.meta.env.VITE_APP_API_BASE || "http://localhost:3000";
 
 const props = defineProps<{
   modelValue: boolean;
