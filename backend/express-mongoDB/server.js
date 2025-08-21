@@ -14,7 +14,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // CORS配置
 app.use(cors({
-  origin: "http://localhost:5173",
+  origin: ["http://localhost:5173", "http://59.110.136.229", "http://59.110.136.229:80"],
   methods: ["GET", "POST", "PUT", "DELETE"],
   allowedHeaders: ["Content-Type", "Authorization"],
   credentials: true
