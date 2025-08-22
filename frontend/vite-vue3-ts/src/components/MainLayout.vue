@@ -11,7 +11,7 @@
             @mouseenter="showDropdown = true"
             @mouseleave="handleMouseLeave"
           >
-            <el-avatar :size="30" src="../../public/party_popper_color.svg" />
+            <el-avatar :size="30" src="/party_popper_color.svg" />
             <span style="margin-left: 10px">{{ username }}</span>
 
             <!-- 下拉菜单 -->
