@@ -9,15 +9,13 @@ const UserSchema = new mongoose.Schema({
   },
   email: { 
     type: String, 
-    required: false, 
-    unique: true,
-    sparse: true // 允许空值，但如果有值则必须唯一
+    required: false,
+    default: null
   },
   phone: {
     type: String,
     required: false,
-    unique: true,
-    sparse: true // 允许空值，但如果有值则必须唯一
+    default: null
   },
   password: { 
     type: String, 

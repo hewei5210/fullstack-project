@@ -62,8 +62,8 @@ router.post('/', auth, async (req, res) => {
 
     const newUser = new User({
       username,
-      email: email || '',
-      phone: phone || '',
+      email: email || `no-email-${username}-${Date.now()}`,
+      phone: phone || `no-phone-${username}-${Date.now()}`,
       password,
       role: role || 'user'
     });
@@ -86,9 +86,10 @@ router.post('/', auth, async (req, res) => {
       data: userResponse
     });
   } catch (error) {
+    console.error('创建用户失败:', error);
     res.status(500).json({
       status: 500,
-      message: '创建用户失败',
+      message: '创建用户失败: ' + error.message,
       data: ''
     });
   }
