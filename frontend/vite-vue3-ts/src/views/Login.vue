@@ -18,13 +18,20 @@
           placeholder="请输入密码"
         />
       </el-form-item>
-      <el-button type="primary" native-type="submit">登录</el-button>
+      <el-button 
+        type="primary" 
+        native-type="submit"
+        :loading="isLoading"
+        :disabled="isLoading"
+      >
+        {{ isLoading ? '登录中...' : '登录' }}
+      </el-button>
     </el-form>
   </div>
 </template>
 
 <script setup>
-import { reactive } from "vue";
+import { reactive, ref } from "vue";
 import { useRouter } from "vue-router";
 import { http } from "@/net/http";
 import tokenManager from "@/utils/tokenManager";
@@ -32,14 +39,22 @@ import { ElMessage } from "element-plus";
 
 const router = useRouter();
 const form = reactive({ username: "", password: "" });
+const isLoading = ref(false);
 
+// Promise链式调用和async/await + try-catch-finally都能实现异步编程，且各有优劣
 const handleLogin = async () => {
+  // 如果正在加载中，直接返回
+  if (isLoading.value) return;
+  
   try {
     // 验证表单
     if (!form.username || !form.password) {
       ElMessage.error("请输入用户名和密码");
       return;
     }
+
+    // 设置加载状态
+    isLoading.value = true;
 
     const res = await http.post("/api/login", form);
     
@@ -50,12 +65,15 @@ const handleLogin = async () => {
       user: res.data.data.user
     });
     
-    // ElMessage.success("登录成功");
+    ElMessage.success("登录成功");
     router.push("/console/home"); // 跳转至后台管理页
   } catch (error) {
     console.error("登录失败", error);
     const errorMessage = error.response?.data?.message || "登录失败，请检查用户名和密码";
     ElMessage.error(errorMessage);
+  } finally {
+    // 无论成功还是失败，都要重置加载状态
+    isLoading.value = false;
   }
 };
 </script>
