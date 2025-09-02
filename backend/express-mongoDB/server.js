@@ -1,7 +1,7 @@
-const express = require('express');
-const cors = require('cors');
-const connectDB = require('./config/database');
-require('dotenv').config();
+const express = require("express");
+const cors = require("cors");
+const connectDB = require("./config/database");
+require("dotenv").config();
 
 const app = express();
 
@@ -13,35 +13,42 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // CORS配置
-app.use(cors({
-  origin: ["http://localhost:5173", "http://59.110.136.229", "http://59.110.136.229:80"],
-  methods: ["GET", "POST", "PUT", "DELETE"],
-  allowedHeaders: ["Content-Type", "Authorization"],
-  credentials: true
-}));
+app.use(
+  cors({
+    origin: [
+      "http://localhost:5173",
+      "http://59.110.136.229",
+      "https://59.110.136.229:80",
+      "https://frontendtool.top",
+    ],
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: true,
+  })
+);
 
 // 健康检查
-app.get('/health', (req, res) => {
+app.get("/health", (req, res) => {
   res.status(200).json({
     status: 200,
-    message: 'Server is running',
-    timestamp: new Date().toISOString()
+    message: "Server is running",
+    timestamp: new Date().toISOString(),
   });
 });
 
 // 路由
-app.use('/api', require('./src/routes/auth'));
-app.use('/api/users', require('./src/routes/users'));
-app.use('/api', require('./src/routes/translations'));
-app.use('/api/csv-sync', require('./src/routes/csvSync'));
+app.use("/api", require("./src/routes/auth"));
+app.use("/api/users", require("./src/routes/users"));
+app.use("/api", require("./src/routes/translations"));
+app.use("/api/csv-sync", require("./src/routes/csvSync"));
 
 // 错误处理中间件
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).json({
     status: 500,
-    message: '服务器内部错误',
-    data: ''
+    message: "服务器内部错误",
+    data: "",
   });
 });
 
@@ -49,8 +56,8 @@ app.use((err, req, res, next) => {
 app.use((req, res) => {
   res.status(404).json({
     status: 404,
-    message: '接口不存在',
-    data: ''
+    message: "接口不存在",
+    data: "",
   });
 });
 
