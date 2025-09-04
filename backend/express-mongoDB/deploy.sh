@@ -44,12 +44,35 @@ systemctl restart nginx
 # 配置防火墙
 echo "配置防火墙..."
 firewall-cmd --permanent --add-port=80/tcp
+firewall-cmd --permanent --add-port=443/tcp
 firewall-cmd --permanent --add-port=3000/tcp
 firewall-cmd --reload
 
+# 创建SSL证书目录
+echo "创建SSL证书目录..."
+mkdir -p /etc/ssl/certs
+mkdir -p /etc/ssl/private
+
+# 生成自签名SSL证书（生产环境请使用正式证书）
+echo "生成SSL证书..."
+openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+    -keyout /etc/ssl/private/frontendtool.top.key \
+    -out /etc/ssl/certs/frontendtool.top.crt \
+    -subj "/C=CN/ST=Beijing/L=Beijing/O=YourCompany/OU=IT/CN=frontendtool.top"
+
+# 设置证书权限
+chmod 600 /etc/ssl/private/frontendtool.top.key
+chmod 644 /etc/ssl/certs/frontendtool.top.crt
+
 echo "部署完成！"
-echo "前端地址: http://59.110.136.229"
-echo "API 地址: http://59.110.136.229/api"
+echo "前端地址: https://frontendtool.top (推荐)"
+echo "前端地址: http://59.110.136.229 (调试用)"
+echo "API 地址: https://frontendtool.top/api"
+echo ""
+echo "注意："
+echo "1. 域名访问会自动重定向到HTTPS"
+echo "2. 当前使用自签名证书，浏览器会显示安全警告"
+echo "3. 生产环境建议使用Let's Encrypt等正式SSL证书"
 
 # 显示服务状态
 echo "服务状态："
