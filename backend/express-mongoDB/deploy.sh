@@ -1,12 +1,12 @@
 #!/bin/bash
 
-echo "开始部署 i18n 后端服务..."
+echo "开始部署 i18n 全栈服务..."
 
 # 进入后端目录
 cd /var/www/backend
 
 # 安装依赖
-echo "安装依赖..."
+echo "安装后端依赖..."
 npm install
 
 # 创建环境配置文件
@@ -35,12 +35,13 @@ echo "后端服务部署完成！"
 echo "配置防火墙..."
 firewall-cmd --permanent --add-port=80/tcp
 firewall-cmd --permanent --add-port=443/tcp
-firewall-cmd --permanent --add-port=3000/tcp
+# 注释掉3000端口，增强安全性（通过Nginx代理访问）
+# firewall-cmd --permanent --add-port=3000/tcp
 firewall-cmd --reload
 
-# 配置 Nginx
+# 配置 Nginx（使用正确的证书路径）
 echo "配置 Nginx..."
-cp nginx.conf /etc/nginx/conf.d/i18n.conf
+cp /var/www/backend/nginx.conf /etc/nginx/conf.d/i18n.conf
 
 # 测试 Nginx 配置
 nginx -t
@@ -55,8 +56,7 @@ echo "API 地址: https://frontendtool.top/api"
 echo ""
 echo "注意："
 echo "1. 域名访问会自动重定向到HTTPS"
-echo "2. 当前使用自签名证书，浏览器会显示安全警告"
-echo "3. 生产环境建议使用Let's Encrypt等正式SSL证书"
+echo "2. 已使用阿里云正式SSL证书，安全警告已解决"
 
 # 显示服务状态
 echo "服务状态："
