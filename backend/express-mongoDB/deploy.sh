@@ -31,6 +31,13 @@ pm2 startup
 
 echo "后端服务部署完成！"
 
+# 配置防火墙
+echo "配置防火墙..."
+firewall-cmd --permanent --add-port=80/tcp
+firewall-cmd --permanent --add-port=443/tcp
+firewall-cmd --permanent --add-port=3000/tcp
+firewall-cmd --reload
+
 # 配置 Nginx
 echo "配置 Nginx..."
 cp nginx.conf /etc/nginx/conf.d/i18n.conf
@@ -40,29 +47,6 @@ nginx -t
 
 # 重启 Nginx
 systemctl restart nginx
-
-# 配置防火墙
-echo "配置防火墙..."
-firewall-cmd --permanent --add-port=80/tcp
-firewall-cmd --permanent --add-port=443/tcp
-firewall-cmd --permanent --add-port=3000/tcp
-firewall-cmd --reload
-
-# 创建SSL证书目录
-echo "创建SSL证书目录..."
-mkdir -p /etc/ssl/certs
-mkdir -p /etc/ssl/private
-
-# 生成自签名SSL证书（生产环境请使用正式证书）
-echo "生成SSL证书..."
-openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
-    -keyout /etc/ssl/private/frontendtool.top.key \
-    -out /etc/ssl/certs/frontendtool.top.crt \
-    -subj "/C=CN/ST=Beijing/L=Beijing/O=YourCompany/OU=IT/CN=frontendtool.top"
-
-# 设置证书权限
-chmod 600 /etc/ssl/private/frontendtool.top.key
-chmod 644 /etc/ssl/certs/frontendtool.top.crt
 
 echo "部署完成！"
 echo "前端地址: https://frontendtool.top (推荐)"
