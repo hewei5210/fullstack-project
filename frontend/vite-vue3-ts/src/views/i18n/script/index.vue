@@ -62,6 +62,67 @@
         </div>
       </el-tab-pane>
 
+      <el-tab-pane label="替换脚本" name="replace">
+        <div class="script-section">
+          <div class="code-editor">
+            <div class="editor-header">
+              <span class="language-tag">javascript</span>
+              <div class="editor-actions">
+                <el-button
+                  type="text"
+                  @click="downloadScript('replace')"
+                  class="action-btn"
+                >
+                  <el-icon><Download /></el-icon>
+                </el-button>
+                <el-button
+                  type="text"
+                  @click="copyScript('replace')"
+                  :loading="copying"
+                  class="action-btn"
+                >
+                  <el-icon><CopyDocument /></el-icon>
+                </el-button>
+                <el-button
+                  type="text"
+                  @click="toggleFullscreen('replace')"
+                  class="action-btn"
+                >
+                  <el-icon><FullScreen /></el-icon>
+                </el-button>
+              </div>
+            </div>
+            <div
+              class="code-content"
+              :class="{ fullscreen: fullscreenMode === 'replace' }"
+            >
+              <div
+                v-if="fullscreenMode === 'replace'"
+                class="fullscreen-overlay"
+                @click="exitFullscreen"
+              >
+                <div class="fullscreen-content" @click.stop>
+                  <div class="fullscreen-header">
+                    <span>中文替换脚本</span>
+                    <el-button
+                      type="text"
+                      @click="exitFullscreen"
+                      class="close-btn"
+                    >
+                      <el-icon><Close /></el-icon>
+                    </el-button>
+                  </div>
+                  <pre><code class="language-javascript">{{ replaceScript }}</code></pre>
+                </div>
+              </div>
+              <pre
+                v-else
+              ><code class="language-javascript">{{ replaceScript }}</code></pre>
+            </div>
+          </div>
+        </div>
+      </el-tab-pane>
+
       <el-tab-pane label="Excel文件去重" name="set">
         <div class="script-section">
           <div class="code-editor">
@@ -135,18 +196,17 @@ import {
   FullScreen,
   Close,
 } from "@element-plus/icons-vue";
-import hljs from 'highlight.js/lib/core';
-import javascript from 'highlight.js/lib/languages/javascript';
-import 'highlight.js/styles/github.css';
+import hljs from "highlight.js/lib/core";
+import javascript from "highlight.js/lib/languages/javascript";
+import "highlight.js/styles/github.css";
 
 // 导入脚本内容
 import extractScriptContent from "./js/extractScript.js?raw";
+import replaceScriptContent from "./js/replaceChinese.js?raw";
 import setScriptContent from "./js/set.js?raw";
 
-
-
 // 注册JavaScript语言
-hljs.registerLanguage('javascript', javascript);
+hljs.registerLanguage("javascript", javascript);
 
 const activeTab = ref("extract");
 const copying = ref(false);
@@ -154,16 +214,16 @@ const fullscreenMode = ref<string | null>(null);
 
 // 脚本内容
 const extractScript = ref("");
+const replaceScript = ref("");
 const setScript = ref("");
 
 // 加载脚本内容
 const loadScripts = () => {
   try {
     extractScript.value = extractScriptContent;
+    replaceScript.value = replaceScriptContent;
     setScript.value = setScriptContent;
-    
 
-    
     // 应用语法高亮
     nextTick(() => {
       applySyntaxHighlighting();
@@ -194,6 +254,9 @@ const copyScript = async (type: string) => {
       case "extract":
         scriptContent = extractScript.value;
         break;
+      case "replace":
+        scriptContent = replaceScript.value;
+        break;
       case "set":
         scriptContent = setScript.value;
         break;
@@ -218,6 +281,10 @@ const downloadScript = (type: string) => {
     case "extract":
       scriptContent = extractScript.value;
       fileName = "extractScript.js";
+      break;
+    case "replace":
+      scriptContent = replaceScript.value;
+      fileName = "replaceChinese.js";
       break;
     case "set":
       scriptContent = setScript.value;
@@ -439,7 +506,8 @@ onUnmounted(() => {
 
 /* 代码显示样式 */
 .code-content code {
-  font-family: "Monaco", "Menlo", "Ubuntu Mono", "Consolas", "Liberation Mono", monospace;
+  font-family: "Monaco", "Menlo", "Ubuntu Mono", "Consolas", "Liberation Mono",
+    monospace;
   background: transparent !important;
   padding: 0 !important;
   border-radius: 0 !important;
