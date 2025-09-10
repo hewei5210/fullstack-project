@@ -175,13 +175,13 @@
 <script lang="ts" setup>
 import { http } from "../../../net/http";
 import { ref, onMounted, defineAsyncComponent } from "vue";
-const AddId = defineAsyncComponent(() => import("./components/addId.vue"));
-const AddBatchId = defineAsyncComponent(() => import("./components/addBatchId.vue"));
+const AddId = defineAsyncComponent(() => import("./components/addItem.vue"));
+const AddBatchId = defineAsyncComponent(() => import("./components/addBatchItems.vue"));
 const UpdateBatchId = defineAsyncComponent(() => import("./components/updateBatchId.vue"));
 const GetBatchIds = defineAsyncComponent(() => import("./components/getBatchIds.vue"));
-const DeleteBatchId = defineAsyncComponent(() => import("./components/deleteBatchId.vue"));
-const EditId = defineAsyncComponent(() => import("./components/editId.vue"));
-const DeleteId = defineAsyncComponent(() => import("./components/deleteId.vue"));
+const DeleteBatchId = defineAsyncComponent(() => import("./components/deleteBatchItems.vue"));
+const EditId = defineAsyncComponent(() => import("./components/editItem.vue"));
+const DeleteId = defineAsyncComponent(() => import("./components/deleteItem.vue"));
 const ExportDialog = defineAsyncComponent(() => import("./components/exportDialog.vue"));
 const ExportExcelDialog = defineAsyncComponent(() => import("./components/exportExcelDialog.vue"));
 import { Plus, Download, Upload, Search, Edit, Delete } from "@element-plus/icons-vue";
