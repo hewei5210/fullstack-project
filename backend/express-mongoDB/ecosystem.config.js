@@ -1,7 +1,7 @@
 module.exports = {
   apps: [{
     name: 'i18n-backend',
-    script: 'server.js',
+    script: 'dist/server.js',
     instances: 1,
     autorestart: true,
     watch: false,

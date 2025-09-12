@@ -1,7 +1,16 @@
-const express = require("express");
-const cors = require("cors");
-const connectDB = require("./config/database");
-require("dotenv").config();
+import express from "express";
+import cors from "cors";
+import connectDB from "./config/database";
+import dotenv from "dotenv";
+
+// 导入路由
+import authRoutes from "./src/routes/auth";
+import userRoutes from "./src/routes/users";
+import translationRoutes from "./src/routes/translations";
+import csvSyncRoutes from "./src/routes/csvSync";
+
+// 加载环境变量
+dotenv.config();
 
 const app = express();
 
@@ -37,13 +46,13 @@ app.get("/health", (req, res) => {
 });
 
 // 路由
-app.use("/api", require("./src/routes/auth"));
-app.use("/api/users", require("./src/routes/users"));
-app.use("/api", require("./src/routes/translations"));
-app.use("/api/csv-sync", require("./src/routes/csvSync"));
+app.use("/api", authRoutes);
+app.use("/api/users", userRoutes);
+app.use("/api", translationRoutes);
+app.use("/api/csv-sync", csvSyncRoutes);
 
 // 错误处理中间件
-app.use((err, req, res, next) => {
+app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
   console.error(err.stack);
   res.status(500).json({
     status: 500,
@@ -52,8 +61,8 @@ app.use((err, req, res, next) => {
   });
 });
 
-// 404处理 - 使用更简单的方式
-app.use((req, res) => {
+// 404处理
+app.use((req: express.Request, res: express.Response) => {
   res.status(404).json({
     status: 404,
     message: "接口不存在",
@@ -63,6 +72,11 @@ app.use((req, res) => {
 
 // 启动服务
 const PORT = process.env.PORT || 3000;
+console.log('正在启动服务器...');
+console.log('MONGODB_URI:', process.env.MONGODB_URI);
+console.log('JWT_SECRET:', process.env.JWT_SECRET ? '已设置' : '未设置');
+console.log('PORT:', PORT);
+
 app.listen(PORT, () => {
   console.log(`服务器已启动，正在监听端口 ${PORT}`);
   console.log(`健康检查: http://localhost:${PORT}/health`);

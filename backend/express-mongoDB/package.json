@@ -1,17 +1,19 @@
 {
   "name": "express-mongodb",
   "version": "1.0.0",
-  "main": "server.js",
+  "main": "dist/server.js",
   "scripts": {
-    "start": "node server.js",
-    "dev": "nodemon server.js",
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "dev": "npx ts-node server.ts",
+    "dev:watch": "nodemon --exec \"npx ts-node server.ts\"",
     "test": "jest",
-    "init": "node scripts/init.js",
-    "init-from-csv": "node scripts/init-from-csv.js",
-    "sync-csv": "node scripts/sync-csv.js",
-    "export-csv": "node scripts/sync-csv.js export",
-    "csv-stats": "node scripts/sync-csv.js stats",
-    "csv-clean": "node scripts/sync-csv.js clean"
+    "init": "ts-node scripts/init.ts",
+    "init-from-csv": "ts-node scripts/init-from-csv.ts",
+    "sync-csv": "ts-node scripts/sync-csv.ts",
+    "export-csv": "ts-node scripts/sync-csv.ts export",
+    "csv-stats": "ts-node scripts/sync-csv.ts stats",
+    "csv-clean": "ts-node scripts/sync-csv.ts clean"
   },
   "keywords": [],
   "author": "",
@@ -32,6 +34,7 @@
     "papaparse": "^5.5.2"
   },
   "devDependencies": {
+    "@types/express": "^5.0.3",
     "nodemon": "^3.1.9"
   }
 }
