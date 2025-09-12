@@ -183,6 +183,67 @@
           </div>
         </div>
       </el-tab-pane>
+
+      <el-tab-pane label="参数替换的国际化方法" name="i18n">
+        <div class="script-section">
+          <div class="code-editor">
+            <div class="editor-header">
+              <span class="language-tag">javascript</span>
+              <div class="editor-actions">
+                <el-button
+                  type="text"
+                  @click="downloadScript('i18n')"
+                  class="action-btn"
+                >
+                  <el-icon><Download /></el-icon>
+                </el-button>
+                <el-button
+                  type="text"
+                  @click="copyScript('i18n')"
+                  :loading="copying"
+                  class="action-btn"
+                >
+                  <el-icon><CopyDocument /></el-icon>
+                </el-button>
+                <el-button
+                  type="text"
+                  @click="toggleFullscreen('i18n')"
+                  class="action-btn"
+                >
+                  <el-icon><FullScreen /></el-icon>
+                </el-button>
+              </div>
+            </div>
+            <div
+              class="code-content"
+              :class="{ fullscreen: fullscreenMode === 'i18n' }"
+            >
+              <div
+                v-if="fullscreenMode === 'i18n'"
+                class="fullscreen-overlay"
+                @click="exitFullscreen"
+              >
+                <div class="fullscreen-content" @click.stop>
+                  <div class="fullscreen-header">
+                    <span>参数替换的国际化方法</span>
+                    <el-button
+                      type="text"
+                      @click="exitFullscreen"
+                      class="close-btn"
+                    >
+                      <el-icon><Close /></el-icon>
+                    </el-button>
+                  </div>
+                  <pre><code class="language-javascript">{{ i18nScript }}</code></pre>
+                </div>
+              </div>
+              <pre
+                v-else
+              ><code class="language-javascript">{{ i18nScript }}</code></pre>
+            </div>
+          </div>
+        </div>
+      </el-tab-pane>
     </el-tabs>
   </div>
 </template>
@@ -204,6 +265,7 @@ import "highlight.js/styles/github.css";
 import extractScriptContent from "./js/extractScript.js?raw";
 import replaceScriptContent from "./js/replaceChinese.js?raw";
 import setScriptContent from "./js/set.js?raw";
+import i18nScriptContent from "./js/i18n.js?raw";
 
 // 注册JavaScript语言
 hljs.registerLanguage("javascript", javascript);
@@ -216,6 +278,7 @@ const fullscreenMode = ref<string | null>(null);
 const extractScript = ref("");
 const replaceScript = ref("");
 const setScript = ref("");
+const i18nScript = ref("");
 
 // 加载脚本内容
 const loadScripts = () => {
@@ -223,6 +286,7 @@ const loadScripts = () => {
     extractScript.value = extractScriptContent;
     replaceScript.value = replaceScriptContent;
     setScript.value = setScriptContent;
+    i18nScript.value = i18nScriptContent;
 
     // 应用语法高亮
     nextTick(() => {
@@ -260,6 +324,9 @@ const copyScript = async (type: string) => {
       case "set":
         scriptContent = setScript.value;
         break;
+      case "i18n":
+        scriptContent = i18nScript.value;
+        break;
     }
 
     await navigator.clipboard.writeText(scriptContent);
@@ -289,6 +356,10 @@ const downloadScript = (type: string) => {
     case "set":
       scriptContent = setScript.value;
       fileName = "set.js";
+      break;
+    case "i18n":
+      scriptContent = i18nScript.value;
+      fileName = "i18n.js";
       break;
   }
 
