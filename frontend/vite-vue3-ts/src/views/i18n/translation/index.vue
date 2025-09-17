@@ -93,26 +93,48 @@
     </div>
     <!-- 列表 -->
     <el-table :data="tableData" stripe style="width: 100%">
-      <el-table-column label="翻译项ID" width="150">
+      <el-table-column label="翻译项ID" width="160" fixed="left">
         <template #default="scope">
-          <div style="display: flex; align-items: center">
-            <span style="margin-left: 10px">{{ scope.row.id }}</span>
+          <div 
+            class="copyable-cell"
+            @dblclick="copyToClipboard(scope.row.id, '翻译项ID')"
+            title="双击复制"
+          >
+            <span>{{ scope.row.id }}</span>
           </div>
         </template>
       </el-table-column>
-      <el-table-column label="翻译项" show-overflow-tooltip>
+      <el-table-column label="翻译项" min-width="200" show-overflow-tooltip>
         <template #default="scope">
-          {{ scope.row.target[`zh-CN`] }}
+          <div 
+            class="copyable-cell"
+            @dblclick="copyToClipboard(scope.row.target['zh-CN'], '翻译项')"
+            title="双击复制"
+          >
+            {{ scope.row.target[`zh-CN`] }}
+          </div>
         </template>
       </el-table-column>
-      <el-table-column label="翻译项-英文" show-overflow-tooltip>
+      <el-table-column label="翻译项-英文" min-width="250" show-overflow-tooltip>
         <template #default="scope">
-          {{ scope.row.target[`en-US`] }}
+          <div 
+            class="copyable-cell"
+            @dblclick="copyToClipboard(scope.row.target['en-US'], '翻译项-英文')"
+            title="双击复制"
+          >
+            {{ scope.row.target[`en-US`] }}
+          </div>
         </template>
       </el-table-column>
-      <el-table-column label="翻译项-繁体" show-overflow-tooltip>
+      <el-table-column label="翻译项-繁体" min-width="200" show-overflow-tooltip>
         <template #default="scope">
-          {{ scope.row.target[`zh-HK`] }}
+          <div 
+            class="copyable-cell"
+            @dblclick="copyToClipboard(scope.row.target['zh-HK'], '翻译项-繁体')"
+            title="双击复制"
+          >
+            {{ scope.row.target[`zh-HK`] }}
+          </div>
         </template>
       </el-table-column>
       <el-table-column label="操作" width="180">
@@ -185,7 +207,7 @@ const DeleteId = defineAsyncComponent(() => import("./components/deleteItem.vue"
 const ExportDialog = defineAsyncComponent(() => import("./components/exportDialog.vue"));
 const ExportExcelDialog = defineAsyncComponent(() => import("./components/exportExcelDialog.vue"));
 import { Plus, Download, Upload, Search, Edit, Delete } from "@element-plus/icons-vue";
-// import { ElMessage } from "element-plus";
+import { ElMessage } from "element-plus";
 
 // 分页
 import type { ComponentSize } from "element-plus";
@@ -337,6 +359,16 @@ const handleSubmitSuccess = () => {
 const handleClearSearch = () => {
   searchContent.value = "";
   getData(); // 清空后自动刷新数据
+};
+
+// 复制到剪贴板功能
+const copyToClipboard = async (text: string, type: string) => {
+  try {
+    await navigator.clipboard.writeText(text);
+    ElMessage.success(`${type}已复制到剪贴板`);
+  } catch (error) {
+    ElMessage.error('复制失败，请手动复制');
+  }
 };
 
 onMounted(() => {
@@ -527,5 +559,50 @@ onMounted(() => {
 .action-buttons,
 .search-area {
   transition: all 0.3s ease;
+}
+
+/* 双击复制功能样式 */
+.copyable-cell {
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 3px;
+  transition: all 0.2s ease;
+  position: relative;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  border: 1px solid transparent;
+}
+
+.copyable-cell:hover {
+  background-color: rgba(114, 96, 211, 0.08);
+  border-color: rgba(114, 96, 211, 0.2);
+  color: #7260d3;
+}
+
+.copyable-cell:active {
+  background-color: rgba(114, 96, 211, 0.12);
+  transform: scale(0.98);
+}
+
+/* 复制提示动画 */
+@keyframes copySuccess {
+  0% {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1);
+  }
+}
+
+.copy-success {
+  animation: copySuccess 0.6s ease-in-out;
 }
 </style>
