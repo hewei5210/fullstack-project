@@ -249,11 +249,14 @@ const select = ref<PlaceholderKey>("zh-CN");
 const searchContent = ref("");
 
 const searchData = () => {
+  // 对搜索内容中的$进行转义
+  const escapedSearchContent = searchContent.value.replace(/\$/g, '\\$');
+  
   const params = {
     page: currentPage.value,
     pageSize: pageSize.value,
     searchSelect: select.value,
-    searchContent: searchContent.value,
+    searchContent: escapedSearchContent,
   };
   http.get("/api/search", params).then((res) => {
     if (res.data.status === 200) {
