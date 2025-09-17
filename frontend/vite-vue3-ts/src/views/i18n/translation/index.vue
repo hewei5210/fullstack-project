@@ -76,6 +76,7 @@
           :placeholder="placeholderMap[select]"
           clearable
           @clear="handleClearSearch"
+          @keyup.enter="searchData"
         >
           <template #prepend>
             <el-select v-model="select" class="search-select">
