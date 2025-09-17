@@ -17,6 +17,7 @@ export interface IUser extends Document {
 export interface ITranslation extends Document {
   _id: string;
   id: string;
+  source: string;
   target: {
     'zh-CN': string;
     'en-US': string;
@@ -83,6 +84,7 @@ export interface IApiResponse<T = any> {
 export interface IPaginationQuery {
   page?: number;
   pageSize?: number;
+  sort?: string;
 }
 
 export interface IPaginationResponse<T> {

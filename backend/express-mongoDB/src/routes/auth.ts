@@ -12,14 +12,14 @@ router.post('/login', async (req: Request, res: Response) => {
       message: 'success',
       data: result
     };
-    res.status(200).json(response);
+    return res.status(200).json(response);
   } catch (error) {
     const response: IApiResponse = {
       status: 400,
       message: error instanceof Error ? error.message : '认证失败',
       data: ''
     };
-    res.status(400).json(response);
+    return res.status(400).json(response);
   }
 });
 
@@ -42,14 +42,14 @@ router.post('/refresh', async (req: Request, res: Response) => {
       message: 'token刷新成功',
       data: result
     };
-    res.status(200).json(response);
+    return res.status(200).json(response);
   } catch (error) {
     const response: IApiResponse = {
       status: 400,
       message: error instanceof Error ? error.message : '刷新失败',
       data: ''
     };
-    res.status(400).json(response);
+    return res.status(400).json(response);
   }
 });
 

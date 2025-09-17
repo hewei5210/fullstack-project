@@ -92,7 +92,7 @@ router.post('/', authMiddleware, async (req: IAuthenticatedRequest, res: Respons
       message: '用户创建成功',
       data: userResponse
     };
-    res.status(201).json(response);
+    return res.status(201).json(response);
   } catch (error) {
     console.error('创建用户失败:', error);
     const response: IApiResponse = {
@@ -100,7 +100,7 @@ router.post('/', authMiddleware, async (req: IAuthenticatedRequest, res: Respons
       message: `创建用户失败: ${error instanceof Error ? error.message : '未知错误'}`,
       data: ''
     };
-    res.status(500).json(response);
+    return res.status(500).json(response);
   }
 });
 
@@ -168,14 +168,14 @@ router.put('/:username', authMiddleware, async (req: IAuthenticatedRequest, res:
       message: '用户更新成功',
       data: userResponse
     };
-    res.status(200).json(response);
+    return res.status(200).json(response);
   } catch (error) {
     const response: IApiResponse = {
       status: 500,
       message: '更新用户失败',
       data: ''
     };
-    res.status(500).json(response);
+    return res.status(500).json(response);
   }
 });
 
@@ -209,14 +209,14 @@ router.delete('/:username', authMiddleware, async (req: IAuthenticatedRequest, r
       message: '用户删除成功',
       data: ''
     };
-    res.status(200).json(response);
+    return res.status(200).json(response);
   } catch (error) {
     const response: IApiResponse = {
       status: 500,
       message: '删除用户失败',
       data: ''
     };
-    res.status(500).json(response);
+    return res.status(500).json(response);
   }
 });
 
