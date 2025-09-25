@@ -577,12 +577,15 @@ onMounted(() => {
   text-overflow: ellipsis;
   max-width: 100%;
   border: 1px solid transparent;
+  user-select: none; /* 禁用文本选择 */
+  -webkit-user-select: none; /* Safari */
+  -moz-user-select: none; /* Firefox */
+  -ms-user-select: none; /* IE/Edge */
 }
 
 .copyable-cell:hover {
   background-color: rgba(114, 96, 211, 0.08);
   border-color: rgba(114, 96, 211, 0.2);
-  color: #7260d3;
 }
 
 .copyable-cell:active {
