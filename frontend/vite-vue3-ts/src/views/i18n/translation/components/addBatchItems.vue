@@ -3,6 +3,9 @@
     v-model="visible"
     title="批量新增翻译项"
     width="50%"
+    :close-on-click-modal="false"
+    :close-on-press-escape="false"
+    :show-close="!isUploading"
     @close="handleClose"
   >
     <el-upload
@@ -13,6 +16,7 @@
       :on-success="handleSuccess"
       :on-error="handleError"
       :on-remove="handleRemove"
+      :disabled="isUploading"
       drag
       :action="`${BASE_URL}/api/batchUpload`"
       :headers="uploadHeaders"
@@ -39,8 +43,17 @@
       </template>
     </el-upload>
 
+    <!-- 显示上传状态 -->
+    <div v-if="isUploading" class="upload-status">
+      <el-divider content-position="left">处理中</el-divider>
+      <div class="loading-container">
+        <el-icon class="is-loading"><loading /></el-icon>
+        <span class="loading-text">正在处理文件，请耐心等待...</span>
+      </div>
+    </div>
+
     <!-- 显示上传结果 -->
-    <div v-if="uploadResult" class="upload-result">
+    <div v-if="uploadResult && !isUploading" class="upload-result">
       <el-divider content-position="left">上传结果</el-divider>
       <el-alert
         :title="responseMessage"
@@ -59,7 +72,7 @@
     </div>
 
     <template #footer>
-      <el-button @click="handleClose">关闭</el-button>
+      <el-button @click="handleClose" :disabled="isUploading">关闭</el-button>
     </template>
   </el-dialog>
 </template>
@@ -67,7 +80,7 @@
 <script setup lang="ts">
 import { ref, watch } from "vue";
 import { ElMessage } from "element-plus"; // Import ElMessage as a value
-import { UploadFilled } from "@element-plus/icons-vue";
+import { UploadFilled, Loading } from "@element-plus/icons-vue";
 import type { UploadInstance } from "element-plus";
 import tokenManager from "../../../../utils/tokenManager";
 
@@ -95,6 +108,7 @@ const emit = defineEmits(["update:modelValue", "submit"]);
 const visible = ref(props.modelValue);
 const uploadResult = ref<any>(null);
 const responseMessage = ref<string>('');
+const isUploading = ref(false);
 
 // 上传请求头
 const uploadHeaders = {
@@ -122,6 +136,12 @@ const beforeUpload = (file: File) => {
     ElMessage.error("仅支持Excel文件(.xls/.xlsx)");
     return false;
   }
+  
+  // 开始上传，设置上传状态
+  isUploading.value = true;
+  uploadResult.value = null;
+  responseMessage.value = '';
+  
   return true;
 };
 
@@ -139,18 +159,25 @@ interface UploadResponse {
 const handleSuccess = (response: UploadResponse) => {
   console.log('response', response);
 
-    uploadResult.value = response.data;
-    responseMessage.value = response.message;
-    // ElMessage({
-    //   message: response.message,
-    //   type: "success",
-    // });
-    emit("submit");
+  // 上传完成，重置上传状态
+  isUploading.value = false;
+  uploadResult.value = response.data;
+  responseMessage.value = response.message;
+  
+  // ElMessage({
+  //   message: response.message,
+  //   type: "success",
+  // });
+  emit("submit");
 };
 
 // 错误处理
 const handleError = (err: any) => {
   console.log('err', err);
+  
+  // 上传失败，重置上传状态
+  isUploading.value = false;
+  
   ElMessage.error(`上传失败: ${err.message}`);
 };
 
@@ -161,6 +188,11 @@ const handleRemove = () => {
 };
 
 const handleClose = () => {
+  // 如果正在上传，不允许关闭
+  if (isUploading.value) {
+    return;
+  }
+  
   // 1. 清空文件列表
   uploadRef.value?.clearFiles();
 
@@ -231,5 +263,30 @@ const downloadTemplate = async () => {
 
 .upload-demo {
   margin-bottom: 20px;
+}
+
+.upload-status {
+  margin-top: 20px;
+}
+
+.loading-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background-color: #f8f9fa;
+  border-radius: 6px;
+  border: 1px solid #e9ecef;
+}
+
+.loading-container .el-icon {
+  font-size: 20px;
+  margin-right: 10px;
+  color: #409eff;
+}
+
+.loading-text {
+  color: #606266;
+  font-size: 14px;
 }
 </style>

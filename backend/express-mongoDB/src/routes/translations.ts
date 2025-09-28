@@ -91,86 +91,95 @@ router.put('/updateBing', async (req: IAuthenticatedRequest, res: Response) => {
 });
 
 // 删除翻译项
-router.delete('/deleteBing/:id', async (req: IAuthenticatedRequest, res: Response) => {
+router.delete('/delBing', async (req: IAuthenticatedRequest, res: Response) => {
   try {
-    const { id } = req.params;
+    const { id } = req.query;
     if (!id) {
-      const response: IApiResponse = {
+      return res.status(400).json({
         status: 400,
         message: '翻译项ID不能为空',
         data: ''
-      };
-      return res.status(400).json(response);
+      });
     }
     
-    const result = await translationService.delete(id);
-    const response: IApiResponse = {
+    const result = await translationService.delete(id as string);
+    return res.status(200).json({
       status: 200,
-      message: '删除成功',
+      message: 'success',
       data: result
-    };
-    return res.status(200).json(response);
+    });
   } catch (error) {
-    const response: IApiResponse = {
+    return res.status(400).json({
       status: 400,
       message: error instanceof Error ? error.message : '删除失败',
       data: ''
-    };
-    return res.status(400).json(response);
+    });
   }
 });
 
 // 导出JSON数据
 router.get('/exportBing', async (req: IAuthenticatedRequest, res: Response) => {
   try {
-    const { langType } = req.query;
-    const result = await translationService.exportJsonData(langType as 'zh-CN' | 'en-US' | 'zh-HK');
+    const { langType = 'zh-CN' } = req.query;
     
-    res.setHeader('Content-Type', 'application/json');
-    res.setHeader('Content-Disposition', `attachment; filename="${result.fileName}"`);
+    const fileInfo = await translationService.exportJsonData(langType as 'zh-CN' | 'en-US' | 'zh-HK');
     
+    // 检查文件是否存在
     const fs = require('fs');
-    const fileStream = fs.createReadStream(result.filePath);
-    fileStream.pipe(res);
+    if (!fs.existsSync(fileInfo.filePath)) {
+      throw new Error('导出文件不存在');
+    }
     
-    fileStream.on('end', () => {
-      result.done(); // 清理临时文件
-    });
+    // 读取文件内容
+    const fileContent = fs.readFileSync(fileInfo.filePath, 'utf8');
     
-    fileStream.on('error', (error: Error) => {
-      console.error('文件流错误:', error);
-      result.done(); // 清理临时文件
-    });
+    // 设置响应头
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="${fileInfo.fileName}"`);
+    res.setHeader('Content-Length', Buffer.byteLength(fileContent, 'utf8'));
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Pragma', 'no-cache');
+    
+    // 发送文件内容
+    res.send(fileContent);
+    
+    // 清理临时文件
+    setTimeout(() => {
+      try {
+        fileInfo.done();
+      } catch (error) {
+        console.error('清理临时文件失败:', error);
+      }
+    }, 2000); // 增加延迟时间
     
     return;
   } catch (error) {
-    const response: IApiResponse = {
+    return res.status(400).json({
       status: 400,
       message: error instanceof Error ? error.message : '导出失败',
       data: ''
-    };
-    return res.status(400).json(response);
+    });
   }
 });
 
 // 导出Excel数据
 router.get('/exportExcel', async (req: IAuthenticatedRequest, res: Response) => {
   try {
-    const { includeId } = req.query;
+    const { includeId = false } = req.query;
+    
     const workbook = await translationService.exportExcelData(includeId === 'true');
     
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-    res.setHeader('Content-Disposition', 'attachment; filename="translations.xlsx"');
+    res.setHeader('Content-Disposition', 'attachment; filename=translation_data.xlsx');
     
     await workbook.xlsx.write(res);
     return;
   } catch (error) {
-    const response: IApiResponse = {
+    return res.status(400).json({
       status: 400,
       message: error instanceof Error ? error.message : '导出失败',
       data: ''
-    };
-    return res.status(400).json(response);
+    });
   }
 });
 
@@ -180,17 +189,210 @@ router.get('/downloadTemplate', async (req: IAuthenticatedRequest, res: Response
     const workbook = translationService.downloadTemplate();
     
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-    res.setHeader('Content-Disposition', 'attachment; filename="translation_template.xlsx"');
+    res.setHeader('Content-Disposition', 'attachment; filename=translation_template.xlsx');
     
     await workbook.xlsx.write(res);
     return;
   } catch (error) {
-    const response: IApiResponse = {
+    return res.status(400).json({
       status: 400,
       message: error instanceof Error ? error.message : '下载失败',
       data: ''
-    };
-    return res.status(400).json(response);
+    });
+  }
+});
+
+// 批量上传翻译项
+router.post('/batchUpload', upload.single('file'), async (req: IAuthenticatedRequest, res: Response) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({
+        status: 400,
+        message: '请上传文件',
+        data: ''
+      });
+    }
+
+    const result = await translationService.batchImport(req.file.buffer, req.file.originalname);
+    
+    // 根据结果代码返回相应的状态码
+    const statusCode = result.code === 200 ? 200 : 400;
+    
+    return res.status(statusCode).json({
+      status: result.code,
+      message: result.message,
+      data: result.data
+    });
+  } catch (error) {
+    return res.status(400).json({
+      status: 400,
+      message: error instanceof Error ? error.message : '批量上传失败',
+      data: ''
+    });
+  }
+});
+
+// 批量修改
+router.post('/batchUpdate', upload.single('file'), async (req: IAuthenticatedRequest, res: Response) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({
+        status: 400,
+        message: '请上传文件',
+        data: ''
+      });
+    }
+
+    const result = await translationService.batchUpdate(req.file.buffer, req.file.originalname);
+    return res.status(200).json({
+      status: 200,
+      message: result.message,
+      data: result.data
+    });
+  } catch (error) {
+    return res.status(400).json({
+      status: 400,
+      message: error instanceof Error ? error.message : '批量修改失败',
+      data: ''
+    });
+  }
+});
+
+// 批量获取翻译项ID
+router.post('/batchGetIds', upload.single('file'), async (req: IAuthenticatedRequest, res: Response) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({
+        status: 400,
+        message: '请上传文件',
+        data: ''
+      });
+    }
+
+    const result = await translationService.batchGetIds(req.file.buffer, req.file.originalname);
+    return res.status(200).json({
+      status: 200,
+      message: result.message,
+      data: result.data
+    });
+  } catch (error) {
+    return res.status(400).json({
+      status: 400,
+      message: error instanceof Error ? error.message : '批量获取ID失败',
+      data: ''
+    });
+  }
+});
+
+// 导出批量获取ID结果
+router.post('/exportGetIdsResult', async (req: IAuthenticatedRequest, res: Response) => {
+  try {
+    const { data } = req.body;
+    
+    if (!data || !Array.isArray(data)) {
+      return res.status(400).json({
+        status: 400,
+        message: '数据格式错误',
+        data: ''
+      });
+    }
+
+    const workbook = await translationService.exportGetIdsResult(data);
+    
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', 'attachment; filename=translation_ids_result.xlsx');
+    
+    await workbook.xlsx.write(res);
+    return;
+  } catch (error) {
+    return res.status(400).json({
+      status: 400,
+      message: error instanceof Error ? error.message : '导出失败',
+      data: ''
+    });
+  }
+});
+
+// 下载批量修改模板
+router.get('/downloadUpdateTemplate', async (req: IAuthenticatedRequest, res: Response) => {
+  try {
+    const workbook = translationService.downloadUpdateTemplate();
+    
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', 'attachment; filename=translation_update_template.xlsx');
+    
+    await workbook.xlsx.write(res);
+    return;
+  } catch (error) {
+    return res.status(400).json({
+      status: 400,
+      message: error instanceof Error ? error.message : '下载失败',
+      data: ''
+    });
+  }
+});
+
+// 下载批量获取ID模板
+router.get('/downloadGetIdsTemplate', async (req: IAuthenticatedRequest, res: Response) => {
+  try {
+    const workbook = translationService.downloadGetIdsTemplate();
+    
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', 'attachment; filename=translation_get_ids_template.xlsx');
+    
+    await workbook.xlsx.write(res);
+    return;
+  } catch (error) {
+    return res.status(400).json({
+      status: 400,
+      message: error instanceof Error ? error.message : '下载失败',
+      data: ''
+    });
+  }
+});
+
+// 批量删除
+router.post('/batchDelete', upload.single('file'), async (req: IAuthenticatedRequest, res: Response) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({
+        status: 400,
+        message: '请上传文件',
+        data: ''
+      });
+    }
+
+    const result = await translationService.batchDelete(req.file.buffer, req.file.originalname);
+    return res.status(200).json({
+      status: 200,
+      message: result.message,
+      data: result.data
+    });
+  } catch (error) {
+    return res.status(400).json({
+      status: 400,
+      message: error instanceof Error ? error.message : '批量删除失败',
+      data: ''
+    });
+  }
+});
+
+// 下载批量删除模板
+router.get('/downloadDeleteTemplate', async (req: IAuthenticatedRequest, res: Response) => {
+  try {
+    const workbook = translationService.downloadDeleteTemplate();
+    
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', 'attachment; filename=translation_delete_template.xlsx');
+    
+    await workbook.xlsx.write(res);
+    return;
+  } catch (error) {
+    return res.status(400).json({
+      status: 400,
+      message: error instanceof Error ? error.message : '下载失败',
+      data: ''
+    });
   }
 });
 
