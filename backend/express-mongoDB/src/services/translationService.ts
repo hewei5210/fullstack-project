@@ -38,17 +38,43 @@ class TranslationService {
   async search(searchParams: ISearchQuery): Promise<IPaginationResponse<ITranslation>> {
     const { searchContent, searchSelect = 'id', page = 1, pageSize = 10 } = searchParams;
     
+    // 将字符串类型的 exactMatch 转换为布尔值
+    // HTTP GET 请求的查询参数都是字符串，需要显式转换
+    let exactMatch = false;
+    if (searchParams.exactMatch !== undefined) {
+      if (typeof searchParams.exactMatch === 'string') {
+        exactMatch = searchParams.exactMatch === 'true';
+      } else if (typeof searchParams.exactMatch === 'boolean') {
+        exactMatch = searchParams.exactMatch;
+      }
+    }
+    
     let query: any = {};
     if (searchContent) {
-      if (searchSelect === 'id') {
-        query.id = { $regex: searchContent, $options: 'i' };
-      } else if (searchSelect === 'zh-CN') {
-        // 搜索source字段，因为zh-CN的内容存储在source中
-        query.source = { $regex: searchContent, $options: 'i' };
-      } else if (searchSelect === 'en-US') {
-        query['target.en-US'] = { $regex: searchContent, $options: 'i' };
-      } else if (searchSelect === 'zh-HK') {
-        query['target.zh-HK'] = { $regex: searchContent, $options: 'i' };
+      if (exactMatch) {
+        // 精准搜索：精确匹配
+        if (searchSelect === 'id') {
+          query.id = searchContent;
+        } else if (searchSelect === 'zh-CN') {
+          // 搜索source字段，因为zh-CN的内容存储在source中
+          query.source = searchContent;
+        } else if (searchSelect === 'en-US') {
+          query['target.en-US'] = searchContent;
+        } else if (searchSelect === 'zh-HK') {
+          query['target.zh-HK'] = searchContent;
+        }
+      } else {
+        // 模糊搜索：使用正则表达式
+        if (searchSelect === 'id') {
+          query.id = { $regex: searchContent, $options: 'i' };
+        } else if (searchSelect === 'zh-CN') {
+          // 搜索source字段，因为zh-CN的内容存储在source中
+          query.source = { $regex: searchContent, $options: 'i' };
+        } else if (searchSelect === 'en-US') {
+          query['target.en-US'] = { $regex: searchContent, $options: 'i' };
+        } else if (searchSelect === 'zh-HK') {
+          query['target.zh-HK'] = { $regex: searchContent, $options: 'i' };
+        }
       }
     }
     

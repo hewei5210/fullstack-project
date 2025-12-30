@@ -3,7 +3,7 @@
     <!-- 操作按钮组 -->
     <div class="action-bar">
       <div class="action-buttons">
-        <!-- 数据操作按钮组 -->
+        <!-- 主要操作按钮组 -->
         <el-button-group class="button-group">
           <el-button 
             type="primary" 
@@ -23,49 +23,40 @@
           </el-button>
           <el-button 
             type="warning" 
-            :icon="Edit" 
-            @click="batchUpdateDialog"
-            title="批量修改现有翻译项"
-          >
-            批量修改
-          </el-button>
-          <el-button 
-            type="danger" 
-            :icon="Delete" 
-            @click="batchDeleteDialog"
-            title="批量删除翻译项"
-          >
-            批量删除
-          </el-button>
-          <el-button 
-            type="info" 
-            :icon="Search" 
-            @click="batchGetIdsDialog"
-            title="批量获取翻译项ID"
-          >
-            批量获取ID
-          </el-button>
-        </el-button-group>
-
-        <!-- 导出按钮组 -->
-        <el-button-group class="button-group">
-          <el-button 
-            type="success" 
             :icon="Download" 
             @click="exportDialog"
             title="导出为JSON格式"
           >
             导出JSON
           </el-button>
-          <el-button 
-            type="info" 
-            :icon="Download" 
-            @click="exportExcelDialog"
-            title="导出为Excel格式"
-          >
-            导出EXCEL
-          </el-button>
         </el-button-group>
+
+        <!-- 更多功能下拉菜单 -->
+        <el-dropdown trigger="click" class="more-dropdown">
+          <el-button type="info" :icon="MoreFilled">
+            更多功能
+          </el-button>
+          <template #dropdown>
+            <el-dropdown-menu>
+              <el-dropdown-item @click="batchUpdateDialog">
+                <el-icon style="margin-right: 8px;"><Edit /></el-icon>
+                <span>批量修改</span>
+              </el-dropdown-item>
+              <el-dropdown-item @click="batchDeleteDialog" divided>
+                <el-icon style="margin-right: 8px;"><Delete /></el-icon>
+                <span>批量删除</span>
+              </el-dropdown-item>
+              <el-dropdown-item @click="batchGetIdsDialog">
+                <el-icon style="margin-right: 8px;"><Search /></el-icon>
+                <span>批量获取ID</span>
+              </el-dropdown-item>
+              <el-dropdown-item @click="exportExcelDialog" divided>
+                <el-icon style="margin-right: 8px;"><Download /></el-icon>
+                <span>导出EXCEL</span>
+              </el-dropdown-item>
+            </el-dropdown-menu>
+          </template>
+        </el-dropdown>
       </div>
 
       <!-- 搜索区域 -->
@@ -87,7 +78,17 @@
             </el-select>
           </template>
           <template #append>
-            <el-button :icon="Search" @click="searchData" />
+            <div class="search-append-wrapper">
+              <el-select 
+                v-model="searchMode" 
+                class="search-mode-select"
+                @change="handleSearchModeChange"
+              >
+                <el-option label="模糊搜索" value="fuzzy" />
+                <el-option label="精确搜索" value="exact" />
+              </el-select>
+              <el-button :icon="Search" @click="searchData" title="搜索" type="primary" class="search-submit-btn" />
+            </div>
           </template>
         </el-input>
       </div>
@@ -138,7 +139,7 @@
           </div>
         </template>
       </el-table-column>
-      <el-table-column label="操作" width="180">
+      <el-table-column label="操作" width="180" fixed="right">
         <template #default="scope">
           <el-button
             size="small"
@@ -197,7 +198,7 @@
 
 <script lang="ts" setup>
 import { http } from "../../../net/http";
-import { ref, onMounted, defineAsyncComponent } from "vue";
+import { ref, computed, onMounted, defineAsyncComponent } from "vue";
 const AddId = defineAsyncComponent(() => import("./components/addItem.vue"));
 const AddBatchId = defineAsyncComponent(() => import("./components/addBatchItems.vue"));
 const UpdateBatchId = defineAsyncComponent(() => import("./components/updateBatchId.vue"));
@@ -207,11 +208,11 @@ const EditId = defineAsyncComponent(() => import("./components/editItem.vue"));
 const DeleteId = defineAsyncComponent(() => import("./components/deleteItem.vue"));
 const ExportDialog = defineAsyncComponent(() => import("./components/exportDialog.vue"));
 const ExportExcelDialog = defineAsyncComponent(() => import("./components/exportExcelDialog.vue"));
-import { Plus, Download, Upload, Search, Edit, Delete } from "@element-plus/icons-vue";
+import { Plus, Download, Upload, Search, Edit, Delete, MoreFilled } from "@element-plus/icons-vue";
 import { ElMessage } from "element-plus";
 
 // 分页
-import type { ComponentSize } from "element-plus";
+import type { ComponentSize } from "element-plus/es";
 const currentPage = ref(1);
 const pageSize = ref(10);
 const total = ref(0);
@@ -247,16 +248,23 @@ const placeholderMap: Record<PlaceholderKey, string> = {
 
 const select = ref<PlaceholderKey>("zh-CN");
 const searchContent = ref("");
+const searchMode = ref<"fuzzy" | "exact">("fuzzy"); // 搜索模式：fuzzy-模糊搜索，exact-精确搜索
+
+// 根据搜索模式计算 exactMatch
+const exactMatch = computed(() => searchMode.value === "exact");
 
 const searchData = () => {
-  // 对搜索内容中的$进行转义
-  const escapedSearchContent = searchContent.value.replace(/\$/g, '\\$');
+  // 精准搜索时不需要转义，模糊搜索时需要转义特殊字符
+  const escapedSearchContent = exactMatch.value 
+    ? searchContent.value 
+    : searchContent.value.replace(/\$/g, '\\$');
   
   const params = {
     page: currentPage.value,
     pageSize: pageSize.value,
     searchSelect: select.value,
     searchContent: escapedSearchContent,
+    exactMatch: exactMatch.value, // 传递精准搜索参数（computed值）
   };
   http.get("/api/search", params).then((res) => {
     if (res.data.status === 200) {
@@ -268,6 +276,14 @@ const searchData = () => {
   }).catch((error) => {
     console.error('搜索请求失败:', error);
   });
+};
+
+// 搜索模式变化时的处理
+const handleSearchModeChange = () => {
+  // 如果当前有搜索内容，自动重新搜索
+  if (searchContent.value) {
+    searchData();
+  }
 };
 // 获取列表数据
 let tableData = ref<Translation[]>([]); // 默认值[];
@@ -404,7 +420,7 @@ onMounted(() => {
 .action-buttons {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 0;
   flex-wrap: wrap;
   flex: 1;
   min-width: 0;
@@ -419,17 +435,66 @@ onMounted(() => {
   display: flex;
   align-items: center;
   flex-shrink: 0;
-  min-width: 280px;
+  min-width: 420px;
 }
 
 .search-input {
-  width: 350px;
-  min-width: 280px;
+  width: 420px;
+  min-width: 420px;
 }
 
 .search-select {
   width: 130px;
   min-width: 100px;
+}
+
+/* 搜索附加区域包装器 */
+.search-append-wrapper {
+  display: flex;
+  align-items: stretch;
+  height: 100%;
+}
+
+/* 搜索模式下拉框样式 */
+.search-mode-select {
+  width: 100px;
+  min-width: 90px;
+  flex-shrink: 0;
+}
+
+/* 确保下拉框和按钮正确排列 */
+:deep(.el-input-group__append) {
+  display: flex;
+  align-items: stretch;
+  padding: 0;
+  border: none;
+}
+
+:deep(.search-mode-select) {
+  border-right: none;
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+  margin: 0;
+}
+
+:deep(.search-mode-select .el-input__wrapper) {
+  border-right: none;
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+  box-shadow: 0 0 0 1px #dcdfe6 inset;
+  height: 100%;
+}
+
+:deep(.search-mode-select .el-input__wrapper.is-focus) {
+  box-shadow: 0 0 0 1px #409eff inset;
+}
+
+.search-submit-btn {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+  border-left: none;
+  margin: 0;
+  flex-shrink: 0;
 }
 
 /* 按钮组样式优化 */
@@ -442,9 +507,33 @@ onMounted(() => {
   border-bottom-left-radius: 6px;
 }
 
-:deep(.el-button-group .el-button:last-child) {
+/* 更多功能按钮右侧圆角 */
+:deep(.more-dropdown .el-button) {
   border-top-right-radius: 6px;
   border-bottom-right-radius: 6px;
+}
+
+:deep(.el-button-group .el-button:last-child) {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+  border-right: none;
+}
+
+/* 更多功能下拉菜单样式 */
+.more-dropdown {
+  margin-left: 0;
+}
+
+:deep(.more-dropdown .el-button) {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+  border-left: none;
+}
+
+:deep(.el-dropdown-menu__item) {
+  display: flex;
+  align-items: center;
+  padding: 10px 20px;
 }
 
 /* 搜索框样式优化 */
@@ -477,8 +566,12 @@ onMounted(() => {
   }
   
   .search-input {
-    width: 320px;
-    min-width: 260px;
+    width: 400px;
+    min-width: 350px;
+  }
+  
+  .search-area {
+    min-width: 430px;
   }
 }
 
@@ -499,29 +592,41 @@ onMounted(() => {
   .button-group {
     width: 100%;
   }
-  
+
   :deep(.el-button-group) {
     display: flex;
     width: 100%;
   }
-  
+
   :deep(.el-button-group .el-button) {
     flex: 1;
     border-radius: 6px !important;
     margin: 0 2px;
   }
-  
+
   :deep(.el-button-group .el-button:first-child) {
     margin-left: 0;
   }
-  
+
   :deep(.el-button-group .el-button:last-child) {
     margin-right: 0;
+  }
+
+  .more-dropdown {
+    width: 100%;
+    margin-left: 0;
+    margin-top: 8px;
+  }
+
+  :deep(.more-dropdown .el-button) {
+    width: 100%;
   }
   
   .search-area {
     width: 100%;
     align-self: stretch;
+    flex-direction: column;
+    align-items: stretch;
   }
   
   .search-input {

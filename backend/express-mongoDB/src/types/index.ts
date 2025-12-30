@@ -99,6 +99,7 @@ export interface IPaginationResponse<T> {
 export interface ISearchQuery extends IPaginationQuery {
   searchSelect?: string;
   searchContent?: string;
+  exactMatch?: boolean; // 精准搜索开关
 }
 
 // 翻译项操作类型

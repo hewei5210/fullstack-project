@@ -2,7 +2,7 @@
   <el-dialog
     v-model="visible"
     title="新增翻译项"
-    width="30%"
+    width="35%"
     @close="handleClose"
   >
     <el-form

@@ -2,7 +2,7 @@
   <el-dialog
     v-model="visible"
     title="批量新增翻译项"
-    width="50%"
+    width="35%"
     :close-on-click-modal="false"
     :close-on-press-escape="false"
     :show-close="!isUploading"

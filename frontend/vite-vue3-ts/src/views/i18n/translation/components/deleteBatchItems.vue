@@ -2,7 +2,7 @@
   <el-dialog
     v-model="visible"
     title="批量删除翻译项"
-    width="50%"
+    width="35%"
     @close="handleClose"
   >
     <el-upload

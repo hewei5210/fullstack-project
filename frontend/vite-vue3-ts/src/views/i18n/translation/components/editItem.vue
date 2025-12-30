@@ -3,7 +3,7 @@
     :model-value="modelValue"
     @close="handleCancel"
     title="编辑翻译项"
-    width="30%"
+    width="35%"
     :close-on-click-modal="false"
   >
     <el-form

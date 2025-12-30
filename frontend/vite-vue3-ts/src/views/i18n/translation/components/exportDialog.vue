@@ -2,7 +2,7 @@
   <el-dialog
     v-model="visible"
     title="选择导出类型"
-    width="30%"
+    width="35%"
     :close-on-click-modal="false"
   >
     <div class="export-container">

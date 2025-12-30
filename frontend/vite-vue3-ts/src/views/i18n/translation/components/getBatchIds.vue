@@ -2,7 +2,7 @@
   <el-dialog
     v-model="visible"
     title="批量获取翻译项ID"
-    width="60%"
+    width="35%"
     @close="handleClose"
   >
     <el-upload
