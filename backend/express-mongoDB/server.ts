@@ -26,8 +26,8 @@ app.use(
   cors({
     origin: [
       "http://localhost:5173",
-      "http://59.110.136.229",
-      "https://59.110.136.229:80",
+      "http://223.6.250.152",
+      "https://223.6.250.152",
       "https://frontendtool.top",
     ],
     methods: ["GET", "POST", "PUT", "DELETE"],

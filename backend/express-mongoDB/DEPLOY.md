@@ -17,7 +17,7 @@
 
 ```bash
 # 连接到服务器
-ssh root@59.110.136.229
+ssh root@223.6.250.152
 
 # 进入后端目录
 cd /var/www/backend
@@ -59,8 +59,9 @@ firewall-cmd --reload
 
 ## 访问地址
 
-- 前端应用: http://59.110.136.229
-- API 接口: http://59.110.136.229/api
+- 前端应用: https://frontendtool.top (推荐)
+- 前端应用: http://223.6.250.152 (调试用)
+- API 接口: https://frontendtool.top/api
 
 ## 常用命令
 

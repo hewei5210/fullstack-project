@@ -51,7 +51,7 @@ systemctl restart nginx
 
 echo "部署完成！"
 echo "前端地址: https://frontendtool.top (推荐)"
-echo "前端地址: http://59.110.136.229 (调试用)"
+echo "前端地址: http://223.6.250.152 (调试用)"
 echo "API 地址: https://frontendtool.top/api"
 echo ""
 echo "注意："
