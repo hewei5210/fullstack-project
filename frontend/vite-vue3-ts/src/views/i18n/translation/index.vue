@@ -457,8 +457,7 @@ onMounted(() => {
 
 /* 搜索模式下拉框样式 */
 .search-mode-select {
-  width: 100px;
-  min-width: 90px;
+  min-width: 100px;
   flex-shrink: 0;
 }
 

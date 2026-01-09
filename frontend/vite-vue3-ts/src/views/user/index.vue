@@ -43,24 +43,42 @@
       </div>
 
       <!-- 用户列表 -->
-      <el-table :data="filteredUsers" stripe style="width: 100%">
-        <el-table-column prop="username" label="用户名" min-width="150" />
+      <el-table :data="users" stripe style="width: 100%">
+        <el-table-column prop="username" label="用户名" min-width="150">
+          <template #default="scope">
+            <span
+              class="copyable-cell"
+              @dblclick="copyToClipboard(scope.row.username, '用户名')"
+              :title="'双击复制: ' + scope.row.username"
+            >
+              {{ scope.row.username }}
+            </span>
+          </template>
+        </el-table-column>
         <el-table-column prop="email" label="邮箱" min-width="200">
           <template #default="scope">
-            {{
-              scope.row.email && !scope.row.email.startsWith("no-email-")
-                ? scope.row.email
-                : "--"
-            }}
+            <span
+              v-if="scope.row.email && !scope.row.email.startsWith('no-email-')"
+              class="copyable-cell"
+              @dblclick="copyToClipboard(scope.row.email, '邮箱')"
+              :title="'双击复制: ' + scope.row.email"
+            >
+              {{ scope.row.email }}
+            </span>
+            <span v-else>--</span>
           </template>
         </el-table-column>
         <el-table-column prop="phone" label="手机号" min-width="150">
           <template #default="scope">
-            {{
-              scope.row.phone && !scope.row.phone.startsWith("no-phone-")
-                ? scope.row.phone
-                : "--"
-            }}
+            <span
+              v-if="scope.row.phone && !scope.row.phone.startsWith('no-phone-')"
+              class="copyable-cell"
+              @dblclick="copyToClipboard(scope.row.phone, '手机号')"
+              :title="'双击复制: ' + scope.row.phone"
+            >
+              {{ scope.row.phone }}
+            </span>
+            <span v-else>--</span>
           </template>
         </el-table-column>
         <el-table-column prop="role" label="角色" min-width="100">
@@ -82,6 +100,7 @@
                 size="small"
                 type="warning"
                 @click="editUser(scope.row)"
+                :disabled="!canEdit(scope.row)"
               >
                 编辑
               </el-button>
@@ -89,7 +108,7 @@
                 size="small"
                 type="danger"
                 @click="handleDeleteUser(scope.row)"
-                :disabled="scope.row.username === 'admin'"
+                :disabled="!canDelete(scope.row)"
               >
                 删除
               </el-button>
@@ -145,6 +164,7 @@
             popper-class="user-role-select-dropdown"
             :popper-append-to-body="true"
             :popper-placement="'bottom-start'"
+            :disabled="isEdit && currentUser?.role === 'user' && currentUser?.username === userForm.username"
           >
             <el-option label="普通用户" value="user" />
             <el-option label="管理员" value="admin" />
@@ -179,10 +199,16 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from "vue";
+import { ref, onMounted, watch, computed } from "vue";
 import { ElMessage } from "element-plus";
 import { Plus, Search } from "@element-plus/icons-vue";
 import { http } from "@/net/http";
+import tokenManager from "@/utils/tokenManager";
+
+// 获取当前登录用户信息
+const currentUser = computed(() => {
+  return tokenManager.getUser();
+});
 
 // 响应式数据
 const searchKeyword = ref("");
@@ -247,55 +273,99 @@ const userRules = {
   role: [{ required: true, message: "请选择角色", trigger: "change" }],
 };
 
-// 计算属性
-const filteredUsers = computed(() => {
-  let result = users.value;
-
-  if (searchKeyword.value) {
-    result = result.filter((user) => {
-      const keyword = searchKeyword.value.toLowerCase();
-      switch (searchType.value) {
-        case "username":
-          return user.username.toLowerCase().includes(keyword);
-        case "email":
-          return user.email && user.email.toLowerCase().includes(keyword);
-        case "phone":
-          return user.phone && user.phone.includes(keyword);
-        default:
-          return (
-            user.username.toLowerCase().includes(keyword) ||
-            (user.email && user.email.toLowerCase().includes(keyword)) ||
-            (user.phone && user.phone.includes(keyword))
-          );
-      }
-    });
-  }
-
-  if (roleFilter.value) {
-    result = result.filter((user) => user.role === roleFilter.value);
-  }
-
-  return result;
-});
-
 // 方法
 const handleSearch = () => {
   currentPage.value = 1;
+  fetchUsers();
 };
 
 const handleSizeChange = (size: number) => {
   pageSize.value = size;
   currentPage.value = 1;
+  fetchUsers();
 };
 
 const handleCurrentChange = (page: number) => {
   currentPage.value = page;
+  fetchUsers();
 };
 
 const formatDate = (date: Date | string) => {
   if (!date) return "--";
   const dateObj = typeof date === "string" ? new Date(date) : date;
   return dateObj.toLocaleDateString("zh-CN");
+};
+
+// 权限判断：是否可以编辑用户
+const canEdit = (user: any): boolean => {
+  if (!currentUser.value) return false;
+  
+  const currentUserRole = currentUser.value.role;
+  const currentUsername = currentUser.value.username;
+  
+  // 管理员可以编辑所有用户
+  if (currentUserRole === "admin") {
+    return true;
+  }
+  
+  // 普通用户只能编辑自己
+  if (currentUserRole === "user") {
+    return user.username === currentUsername;
+  }
+  
+  return false;
+};
+
+// 权限判断：是否可以删除用户
+const canDelete = (user: any): boolean => {
+  if (!currentUser.value) return false;
+  
+  const currentUserRole = currentUser.value.role;
+  
+  // 不能删除 admin 用户（无论什么角色）
+  if (user.username === "admin") {
+    return false;
+  }
+  
+  // 管理员可以删除普通用户
+  if (currentUserRole === "admin") {
+    return true;
+  }
+  
+  // 普通用户不能删除任何人（包括自己）
+  return false;
+};
+
+// 复制到剪贴板
+const copyToClipboard = async (text: string, label: string) => {
+  if (!text || text === "--") return;
+  
+  try {
+    await navigator.clipboard.writeText(text);
+    ElMessage.success(`${label}已复制: ${text}`);
+  } catch (error) {
+    // 降级方案：使用传统方法
+    try {
+      const textArea = document.createElement("textarea");
+      textArea.value = text;
+      textArea.style.position = "fixed";
+      textArea.style.left = "-999999px";
+      textArea.style.top = "-999999px";
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      const successful = document.execCommand("copy");
+      document.body.removeChild(textArea);
+      
+      if (successful) {
+        ElMessage.success(`${label}已复制: ${text}`);
+      } else {
+        ElMessage.error("复制失败，请手动复制");
+      }
+    } catch (fallbackError) {
+      ElMessage.error("复制失败，请手动复制");
+    }
+  }
 };
 
 const showAddUserDialog = () => {
@@ -311,6 +381,12 @@ const showAddUserDialog = () => {
 };
 
 const editUser = (user: any) => {
+  // 权限检查
+  if (!canEdit(user)) {
+    ElMessage.warning("您没有权限编辑该用户");
+    return;
+  }
+  
   isEdit.value = true;
   userForm.value = {
     username: user.username,
@@ -326,6 +402,12 @@ const handleDeleteUser = (user: any) => {
   // 确保用户对象有效
   if (!user || !user.username) {
     ElMessage.error("用户信息无效");
+    return;
+  }
+
+  // 权限检查
+  if (!canDelete(user)) {
+    ElMessage.warning("您没有权限删除该用户");
     return;
   }
 
@@ -387,9 +469,31 @@ const submitUser = async () => {
 // 获取用户列表
 const fetchUsers = async () => {
   try {
-    const response = await http.get("/api/users");
-    users.value = response.data.data || [];
-    totalUsers.value = users.value.length;
+    const params: any = {
+      page: currentPage.value,
+      pageSize: pageSize.value,
+    };
+
+    // 添加搜索参数
+    if (searchKeyword.value && searchType.value) {
+      params.searchType = searchType.value;
+      params.searchKeyword = searchKeyword.value;
+    }
+
+    // 添加角色筛选参数
+    if (roleFilter.value) {
+      params.roleFilter = roleFilter.value;
+    }
+
+    const response = await http.get("/api/users", params);
+    console.log(response);
+    if (response.data.status === 200) {
+      const responseData = response.data.data || {};
+      users.value = responseData.users || [];
+      totalUsers.value = responseData.pagination?.total || 0;
+    } else {
+      ElMessage.error(response.data.message || "获取用户列表失败");
+    }
   } catch (error: any) {
     ElMessage.error("获取用户列表失败");
   }
@@ -439,6 +543,12 @@ const removeUser = async (username: string) => {
   }
 };
 
+// 监听角色筛选变化
+watch(roleFilter, () => {
+  currentPage.value = 1;
+  fetchUsers();
+});
+
 // 生命周期
 onMounted(() => {
   fetchUsers();
@@ -455,6 +565,20 @@ onMounted(() => {
 
 .user-content {
   min-height: 400px;
+}
+
+.copyable-cell {
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.2s;
+  display: inline-block;
+  padding: 2px 4px;
+  border-radius: 2px;
+}
+
+.copyable-cell:hover {
+  background-color: #f0f9ff;
+  color: #409eff;
 }
 </style>
 

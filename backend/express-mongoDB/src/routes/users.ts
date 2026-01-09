@@ -5,17 +5,68 @@ import { IAuthenticatedRequest, IApiResponse } from '../types';
 
 const router = express.Router();
 
-// 获取用户列表
+// 获取用户列表（支持分页、搜索和筛选）
 router.get('/', authMiddleware, async (req: IAuthenticatedRequest, res: Response) => {
   try {
-    const users = await User.find({}, { password: 0 }); // 排除密码字段
+    // 获取查询参数
+    const page = parseInt(req.query.page as string) || 1;
+    const pageSize = parseInt(req.query.pageSize as string) || 10;
+    const searchType = req.query.searchType as string; // username, email, phone
+    const searchKeyword = req.query.searchKeyword as string;
+    const roleFilter = req.query.roleFilter as string; // admin, user
+
+    // 构建查询条件
+    const query: any = {};
+
+    // 搜索条件
+    if (searchKeyword && searchType) {
+      switch (searchType) {
+        case 'username':
+          query.username = { $regex: searchKeyword, $options: 'i' };
+          break;
+        case 'email':
+          query.email = { $regex: searchKeyword, $options: 'i' };
+          break;
+        case 'phone':
+          query.phone = { $regex: searchKeyword, $options: 'i' };
+          break;
+      }
+    }
+
+    // 角色筛选
+    if (roleFilter) {
+      query.role = roleFilter;
+    }
+
+    // 计算跳过的记录数
+    const skip = (page - 1) * pageSize;
+
+    // 查询总数
+    const total = await User.countDocuments(query);
+
+    // 查询分页数据
+    const users = await User.find(query, { password: 0 })
+      .skip(skip)
+      .limit(pageSize)
+      .sort({ createdAt: -1 }); // 按创建时间倒序
+
+    // 返回分页数据
     const response: IApiResponse = {
       status: 200,
       message: '获取用户列表成功',
-      data: users
+      data: {
+        users,
+        pagination: {
+          page,
+          pageSize,
+          total,
+          totalPages: Math.ceil(total / pageSize)
+        }
+      }
     };
     res.status(200).json(response);
   } catch (error) {
+    console.error('获取用户列表失败:', error);
     const response: IApiResponse = {
       status: 500,
       message: '获取用户列表失败',
