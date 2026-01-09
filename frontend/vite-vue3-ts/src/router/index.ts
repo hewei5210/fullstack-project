@@ -4,7 +4,14 @@ import tokenManager from "@/utils/tokenManager";
 const routes = [
   {
     path: "/",
-    redirect: "/login",
+    redirect: () => {
+      // 检查是否已登录
+      const user = tokenManager.getUser();
+      if (user) {
+        return "/console/i18n/translation";
+      }
+      return "/login";
+    },
   },
   {
     path: "/login",
@@ -89,7 +96,7 @@ router.beforeEach(async (to, _from, next) => {
 
     // 已登录时禁止访问登录页（避免循环）
     if (isAuthenticated && to.path === "/login") {
-      next("/console/home"); // 重定向到控制台首页
+      next("/console/i18n/translation"); // 重定向到翻译项管理页面
       return;
     }
 

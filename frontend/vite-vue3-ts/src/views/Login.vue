@@ -66,7 +66,7 @@ const handleLogin = async () => {
     });
     
     ElMessage.success("登录成功");
-    router.push("/console/home"); // 跳转至后台管理页
+    router.push("/console/i18n/translation"); // 跳转至翻译项管理页面
   } catch (error) {
     console.error("登录失败", error);
     const errorMessage = error.response?.data?.message || "登录失败，请检查用户名和密码";
