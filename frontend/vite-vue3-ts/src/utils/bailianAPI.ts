@@ -2,9 +2,9 @@
  * 阿里云百炼模型API调用工具
  */
 
-const BAILIAN_API_KEY = 'sk-8aa11543dd734e09bebb8e98e887fbba';
-const BAILIAN_API_URL = 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions';
-const MODEL_NAME = 'qwen-plus'; // 可以根据需要修改模型，如 qwen-turbo, qwen-plus, qwen-max 等
+export const BAILIAN_API_KEY = 'sk-8aa11543dd734e09bebb8e98e887fbba';
+export const BAILIAN_API_URL = 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions';
+export const MODEL_NAME = 'qwen-plus'; // 可以根据需要修改模型，如 qwen-turbo, qwen-plus, qwen-max 等
 
 interface Message {
   role: 'user' | 'assistant' | 'system';

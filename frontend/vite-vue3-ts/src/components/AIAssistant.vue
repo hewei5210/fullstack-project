@@ -102,21 +102,29 @@
             <el-icon v-if="message.role === 'user'">
               <UserFilled />
             </el-icon>
-            <el-icon v-else>
-              <Service />
-            </el-icon>
+            <img
+              v-else
+              src="@/assets/ai-assistant-icon.png"
+              alt="AI"
+              class="message-avatar-icon"
+            />
           </div>
           <div class="message-content">
             <div
               class="message-text"
               v-html="formatMessage(message.content)"
+              @dblclick="copyMessageContent(message.content)"
             ></div>
             <div class="message-time">{{ formatTime(message.timestamp) }}</div>
           </div>
         </div>
         <div v-if="loading" class="ai-dialog-message message-assistant">
           <div class="message-avatar">
-            <el-icon><Service /></el-icon>
+            <img
+              src="@/assets/ai-assistant-icon.png"
+              alt="AI"
+              class="message-avatar-icon"
+            />
           </div>
           <div class="message-content">
             <div class="message-loading">
@@ -164,7 +172,7 @@
 import { ref, nextTick, watch, onMounted, onUnmounted, computed } from "vue";
 import { useRoute } from "vue-router";
 import { ElMessage } from "element-plus";
-import { UserFilled, Service, Close } from "@element-plus/icons-vue";
+import { UserFilled, Close } from "@element-plus/icons-vue";
 import { callBailianAPI } from "@/utils/bailianAPI";
 import { useDraggable } from "@vueuse/core";
 // 导入自定义图标
@@ -583,6 +591,42 @@ const formatTime = (timestamp: number) => {
   return `${hours}:${minutes}`;
 };
 
+// 复制消息内容
+const copyMessageContent = async (content: string) => {
+  try {
+    // 从HTML中提取纯文本（将<br>转换为换行符）
+    const textContent = content
+      .replace(/<br\s*\/?>/gi, '\n')
+      .replace(/<[^>]+>/g, '') // 移除所有HTML标签
+      .trim();
+    
+    // 使用Clipboard API复制
+    await navigator.clipboard.writeText(textContent);
+    ElMessage.success("已复制到剪贴板");
+  } catch (error) {
+    console.error("复制失败:", error);
+    // 降级方案：使用传统方法
+    try {
+      const textArea = document.createElement("textarea");
+      const textContent = content
+        .replace(/<br\s*\/?>/gi, '\n')
+        .replace(/<[^>]+>/g, '')
+        .trim();
+      textArea.value = textContent;
+      textArea.style.position = "fixed";
+      textArea.style.opacity = "0";
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand("copy");
+      document.body.removeChild(textArea);
+      ElMessage.success("已复制到剪贴板");
+    } catch (fallbackError) {
+      console.error("降级复制方案也失败:", fallbackError);
+      ElMessage.error("复制失败，请手动选择文本复制");
+    }
+  }
+};
+
 
 // 监听路由变化，如果切换到登录页，关闭对话框
 watch(
@@ -803,6 +847,17 @@ onUnmounted(() => {
   flex-shrink: 0;
   background: #f0f5ff;
   color: #3370ff;
+  background-image: url("@/assets/ai-assistant-bg.png");
+  background-size: 32px 32px;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.message-avatar-icon {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 50%;
 }
 
 .message-user .message-avatar {
@@ -824,11 +879,32 @@ onUnmounted(() => {
   color: #1f2329;
   word-wrap: break-word;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  user-select: text;
+  cursor: text;
+  transition: background-color 0.2s;
+}
+
+.message-text:hover {
+  background: #f5f7fa;
+}
+
+.message-text:active {
+  background: #e8ecf0;
 }
 
 .message-user .message-text {
   background: #3370ff;
   color: #fff;
+  user-select: text;
+  cursor: text;
+}
+
+.message-user .message-text:hover {
+  background: #4d85ff;
+}
+
+.message-user .message-text:active {
+  background: #1d5fcc;
 }
 
 .message-time {
@@ -917,7 +993,7 @@ onUnmounted(() => {
   cursor: move;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08), 0 0 1px rgba(0, 0, 0, 0.04);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  z-index: 99 !important;
+  z-index: 99999 !important;
   color: #333;
   user-select: none;
   touch-action: none;

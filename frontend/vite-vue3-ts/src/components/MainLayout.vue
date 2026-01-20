@@ -86,6 +86,12 @@
             <span>用户管理</span>
           </el-menu-item>
 
+          <!-- AI API管理 -->
+          <el-menu-item index="/console/ai-api">
+            <el-icon><Setting /></el-icon>
+            <span>AI API管理</span>
+          </el-menu-item>
+
           <!-- 更新日志 -->
           <el-menu-item index="/console/changelog">
             <el-icon><Clock /></el-icon>
@@ -123,7 +129,8 @@ import {
   List, 
   User, 
   Clock,
-  ArrowLeft
+  ArrowLeft,
+  Setting
 } from "@element-plus/icons-vue";
 import tokenManager from "@/utils/tokenManager";
 

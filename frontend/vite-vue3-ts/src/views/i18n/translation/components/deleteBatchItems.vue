@@ -3,6 +3,7 @@
     v-model="visible"
     title="批量删除翻译项"
     width="35%"
+    :close-on-click-modal="false"
     @close="handleClose"
   >
     <el-upload

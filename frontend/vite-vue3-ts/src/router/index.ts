@@ -61,6 +61,12 @@ const routes = [
         component: () => import("@/views/user/index.vue"),
         meta: { title: "用户管理" },
       },
+      // AI API管理
+      {
+        path: "ai-api",
+        component: () => import("@/views/ai-api/index.vue"),
+        meta: { title: "AI API管理" },
+      },
       // 更新日志
       {
         path: "changelog",

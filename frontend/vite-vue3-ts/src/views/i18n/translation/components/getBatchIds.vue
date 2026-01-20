@@ -3,6 +3,7 @@
     v-model="visible"
     title="批量获取翻译项ID"
     width="35%"
+    :close-on-click-modal="false"
     @close="handleClose"
   >
     <el-upload
