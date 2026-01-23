@@ -53,6 +53,11 @@ const routes = [
             component: () => import("@/views/i18n/translation/index.vue"),
             meta: { title: "翻译项管理" },
           },
+          {
+            path: "translation-auto",
+            component: () => import("@/views/i18n/translation-auto/index.vue"),
+            meta: { title: "翻译项自动化" },
+          },
         ],
       },
       // 用户管理

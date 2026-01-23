@@ -78,6 +78,10 @@
               <el-icon><List /></el-icon>
               <span>翻译项管理</span>
             </el-menu-item>
+            <el-menu-item index="/console/i18n/translation-auto">
+              <el-icon><MagicStick /></el-icon>
+              <span>翻译项自动化</span>
+            </el-menu-item>
           </el-sub-menu>
 
           <!-- 用户管理 -->
@@ -130,7 +134,8 @@ import {
   User, 
   Clock,
   ArrowLeft,
-  Setting
+  Setting,
+  MagicStick
 } from "@element-plus/icons-vue";
 import tokenManager from "@/utils/tokenManager";
 
