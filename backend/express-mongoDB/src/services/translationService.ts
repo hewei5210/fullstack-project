@@ -705,7 +705,13 @@ class TranslationService {
   // 导出批量获取ID结果
   async exportGetIdsResult(data: any[]): Promise<ExcelJS.Workbook> {
     const workbook = new ExcelJS.Workbook();
-    const worksheet = workbook.addWorksheet('翻译项ID结果');
+    // 禁用一些功能以提升性能
+    const worksheet = workbook.addWorksheet('翻译项ID结果', {
+      properties: {
+        defaultRowHeight: 15
+      },
+      views: [{ showGridLines: false }]
+    });
     
     // 设置表头
     worksheet.columns = [
@@ -715,19 +721,21 @@ class TranslationService {
       { header: "翻译项-繁体", key: "zh-HK", width: 30 },
     ];
     
-    // 添加数据行
-    data.forEach(item => {
-      worksheet.addRow({
-        id: item.id,
-        'zh-CN': item.source,
-        'en-US': item['en-US'],
-        'zh-HK': item['zh-HK']
-      });
-    });
+    // 批量准备数据，提高性能
+    const rows = data.map(item => [
+      item.id || '',
+      item.source || '',
+      item['en-US'] || '',
+      item['zh-HK'] || ''
+    ]);
+    
+    // 批量添加行（比逐个添加更高效）
+    worksheet.addRows(rows);
     
     // 设置表头样式
-    worksheet.getRow(1).font = { bold: true };
-    worksheet.getRow(1).fill = {
+    const headerRow = worksheet.getRow(1);
+    headerRow.font = { bold: true };
+    headerRow.fill = {
       type: 'pattern',
       pattern: 'solid',
       fgColor: { argb: 'FFE0E0E0' }

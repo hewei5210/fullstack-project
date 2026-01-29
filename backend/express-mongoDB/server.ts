@@ -18,8 +18,9 @@ const app = express();
 connectDB();
 
 // 中间件配置
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// 增加 body parser 大小限制，支持大文件上传（50MB）
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 // CORS配置
 app.use(

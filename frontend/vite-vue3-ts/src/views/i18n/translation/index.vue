@@ -31,6 +31,7 @@
           </el-button>
         </el-button-group>
 
+
         <!-- 更多功能下拉菜单 -->
         <el-dropdown trigger="click" class="more-dropdown">
           <el-button type="info" :icon="MoreFilled">
@@ -53,6 +54,10 @@
               <el-dropdown-item @click="exportExcelDialog" divided>
                 <el-icon style="margin-right: 8px;"><Download /></el-icon>
                 <span>导出EXCEL</span>
+              </el-dropdown-item>
+              <el-dropdown-item @click="excelToJsonDialog">
+                <el-icon style="margin-right: 8px;"><Upload /></el-icon>
+                <span>Excel转JSON</span>
               </el-dropdown-item>
             </el-dropdown-menu>
           </template>
@@ -193,6 +198,7 @@
     />
     <ExportDialog v-model="exportDialogVisible" />
     <ExportExcelDialog v-model="exportExcelDialogVisible" />
+    <ExcelToJsonDialog v-model="excelToJsonDialogVisible" />
   </div>
 </template>
 
@@ -208,6 +214,7 @@ const EditId = defineAsyncComponent(() => import("./components/editItem.vue"));
 const DeleteId = defineAsyncComponent(() => import("./components/deleteItem.vue"));
 const ExportDialog = defineAsyncComponent(() => import("./components/exportDialog.vue"));
 const ExportExcelDialog = defineAsyncComponent(() => import("./components/exportExcelDialog.vue"));
+const ExcelToJsonDialog = defineAsyncComponent(() => import("./components/excelToJsonDialog.vue"));
 import { Plus, Download, Upload, Search, Edit, Delete, MoreFilled } from "@element-plus/icons-vue";
 import { ElMessage } from "element-plus";
 
@@ -334,6 +341,12 @@ const exportDialog = () => {
 const exportExcelDialogVisible = ref(false);
 const exportExcelDialog = () => {
   exportExcelDialogVisible.value = true;
+};
+
+// 控制Excel转JSON弹窗
+const excelToJsonDialogVisible = ref(false);
+const excelToJsonDialog = () => {
+  excelToJsonDialogVisible.value = true;
 };
 
 // 批量获取ID弹窗

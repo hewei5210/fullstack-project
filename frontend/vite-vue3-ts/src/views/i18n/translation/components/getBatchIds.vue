@@ -97,6 +97,8 @@ import { ElMessage } from "element-plus";
 import { UploadFilled, Download } from "@element-plus/icons-vue";
 import type { UploadInstance } from "element-plus";
 import tokenManager from "../../../../utils/tokenManager";
+// @ts-ignore
+import * as XLSX from "xlsx";
 
 const uploadRef = ref<UploadInstance>();
 
@@ -218,7 +220,7 @@ const downloadTemplate = async () => {
   }
 };
 
-// 导出结果
+// 导出结果 - 在前端直接生成Excel，避免发送大量数据到后端
 const exportResult = async () => {
   if (!uploadResult.value?.data || uploadResult.value.data.length === 0) {
     ElMessage.warning("没有可导出的数据");
@@ -227,35 +229,39 @@ const exportResult = async () => {
 
   exporting.value = true;
   try {
-    const response = await fetch(`${BASE_URL}/api/exportGetIdsResult`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${tokenManager.getToken()}`
-      },
-      body: JSON.stringify({
-        data: uploadResult.value.data
-      })
-    });
+    // 准备Excel数据
+    const excelData = uploadResult.value.data.map(item => ({
+      '翻译项ID': item.id || '',
+      '翻译项': item.source || '',
+      '翻译项-英文': item['en-US'] || '',
+      '翻译项-繁体': item['zh-HK'] || ''
+    }));
+
+    // 创建工作簿
+    const workbook = XLSX.utils.book_new();
     
-    if (!response.ok) {
-      throw new Error('导出失败');
-    }
+    // 创建工作表
+    const worksheet = XLSX.utils.json_to_sheet(excelData);
     
-    const blob = await response.blob();
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.setAttribute("download", `翻译项ID结果_${new Date().toISOString().split('T')[0]}.xlsx`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+    // 设置列宽
+    worksheet['!cols'] = [
+      { wch: 20 }, // 翻译项ID
+      { wch: 30 }, // 翻译项
+      { wch: 30 }, // 翻译项-英文
+      { wch: 30 }  // 翻译项-繁体
+    ];
     
-    ElMessage.success("Excel文件导出成功");
+    // 将工作表添加到工作簿
+    XLSX.utils.book_append_sheet(workbook, worksheet, '翻译项ID结果');
+    
+    // 生成Excel文件并下载
+    const fileName = `翻译项ID结果_${new Date().toISOString().split('T')[0]}.xlsx`;
+    XLSX.writeFile(workbook, fileName);
+    
+    ElMessage.success(`Excel文件导出成功，共 ${uploadResult.value.data.length} 条数据`);
   } catch (error) {
     console.error('导出失败:', error);
-    ElMessage.error("导出失败");
+    ElMessage.error(`导出失败: ${error instanceof Error ? error.message : '未知错误'}`);
   } finally {
     exporting.value = false;
   }

@@ -8,12 +8,12 @@
     "dev": "npx ts-node server.ts",
     "dev:watch": "nodemon --exec \"npx ts-node server.ts\"",
     "test": "jest",
-    "init": "ts-node scripts/init.ts",
-    "init-from-csv": "ts-node scripts/init-from-csv.ts",
-    "sync-csv": "ts-node scripts/sync-csv.ts",
-    "export-csv": "ts-node scripts/sync-csv.ts export",
-    "csv-stats": "ts-node scripts/sync-csv.ts stats",
-    "csv-clean": "ts-node scripts/sync-csv.ts clean"
+    "init": "npx ts-node scripts/init.ts",
+    "init-from-csv": "npx ts-node scripts/init-from-csv.ts",
+    "sync-csv": "npx ts-node scripts/sync-csv.ts",
+    "export-csv": "npx ts-node scripts/sync-csv.ts export",
+    "csv-stats": "npx ts-node scripts/sync-csv.ts stats",
+    "csv-clean": "npx ts-node scripts/sync-csv.ts clean"
   },
   "keywords": [],
   "author": "",

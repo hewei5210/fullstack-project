@@ -297,17 +297,31 @@ router.post('/exportGetIdsResult', async (req: IAuthenticatedRequest, res: Respo
       });
     }
 
+    // 检查数据量，如果太大给出提示
+    if (data.length > 10000) {
+      return res.status(400).json({
+        status: 400,
+        message: `数据量过大（${data.length}条），请分批导出，每次最多10000条`,
+        data: ''
+      });
+    }
+
+    console.log(`开始导出 ${data.length} 条数据的Excel文件...`);
     const workbook = await translationService.exportGetIdsResult(data);
     
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     res.setHeader('Content-Disposition', 'attachment; filename=translation_ids_result.xlsx');
     
+    // 使用流式写入，避免内存问题
     await workbook.xlsx.write(res);
+    console.log(`Excel文件导出成功，共 ${data.length} 条数据`);
     return;
   } catch (error) {
-    return res.status(400).json({
-      status: 400,
-      message: error instanceof Error ? error.message : '导出失败',
+    console.error('导出Excel文件失败:', error);
+    // 返回500状态码，因为这是服务器内部错误
+    return res.status(500).json({
+      status: 500,
+      message: error instanceof Error ? error.message : '服务器内部错误',
       data: ''
     });
   }
