@@ -419,16 +419,30 @@ const handleFileChange = (file: any) => {
     const fileName = rawFile.name.toLowerCase();
     const isValid = validExtensions.some((ext) => fileName.endsWith(ext));
 
-    if (!isValid) {
-      ElMessage.warning(`文件 ${rawFile.name} 不是支持的类型，已跳过`);
-      uploadRef.value?.handleRemove(file);
-      return;
+    // 如果是文件夹上传模式
+    if (uploadMode.value === "folder") {
+      // 只处理有有效扩展名的文件，其他（包括子文件夹）静默跳过
+      if (!isValid) {
+        uploadRef.value?.handleRemove(file);
+        return;
+      }
+    } else {
+      // 单个文件模式：不支持的文件类型显示警告
+      if (!isValid) {
+        ElMessage.warning(`文件 ${rawFile.name} 不是支持的类型，已跳过`);
+        uploadRef.value?.handleRemove(file);
+        return;
+      }
     }
 
-    // 检查是否已存在
-    const exists = fileList.value.some(
-      (f) => f.name === rawFile.name && f.size === rawFile.size
-    );
+    // 检查是否已存在（使用完整路径作为唯一标识，避免同名文件冲突）
+    const exists = fileList.value.some((f) => {
+      if (uploadMode.value === "folder" && f.webkitRelativePath) {
+        return f.webkitRelativePath === rawFile.webkitRelativePath;
+      }
+      return f.name === rawFile.name && f.size === rawFile.size;
+    });
+    
     if (!exists) {
       fileList.value.push(rawFile);
     }
