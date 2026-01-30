@@ -148,13 +148,21 @@ const beforeUpload = (file: File) => {
   return true;
 };
 
+// 批量获取ID的数据项类型
+interface BatchGetIdItem {
+  id: string;
+  source: string;
+  'en-US': string;
+  'zh-HK': string;
+}
+
 // 响应体类型
 interface UploadResponse {
   status: number;
   data: {
     success: number;
     total: number;
-    data?: Array<any>;
+    data?: Array<BatchGetIdItem>;
     errors?: Array<{ row: number; message: string }>;
   };
   message: string;
@@ -230,7 +238,7 @@ const exportResult = async () => {
   exporting.value = true;
   try {
     // 准备Excel数据
-    const excelData = uploadResult.value.data.map(item => ({
+    const excelData = uploadResult.value.data.map((item: BatchGetIdItem) => ({
       '翻译项ID': item.id || '',
       '翻译项': item.source || '',
       '翻译项-英文': item['en-US'] || '',
