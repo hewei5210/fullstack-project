@@ -36,38 +36,6 @@
           <span class="file-size">({{ formatFileSize(file.size || 0) }})</span>
         </div>
       </div>
-
-      <!-- 转换结果详情（当数据不一致时显示） -->
-      <div v-if="convertResult && !convertResult.isConsistent" class="convert-result">
-        <el-divider content-position="left">转换结果详情</el-divider>
-        <el-alert
-          type="warning"
-          :title="convertResult.title"
-          :closable="false"
-          show-icon
-        >
-          <template #default>
-            
-          </template>
-        </el-alert>
-        <div class="result-details">
-              <p><strong>Excel总行数（不含表头）:</strong> {{ convertResult.totalRows }} 行</p>
-              <p><strong>成功处理:</strong> {{ convertResult.processedRows }} 行</p>
-              <p><strong>唯一key数量:</strong> {{ convertResult.uniqueKeyCount }} 个</p>
-              <p><strong>生成文件:</strong></p>
-              <ul>
-                <li>zh-CN.json: {{ convertResult.zhCNCount }} 条</li>
-                <li>en-US.json: {{ convertResult.enUSCount }} 条</li>
-                <li>zh-HK.json: {{ convertResult.zhHKCount }} 条</li>
-              </ul>
-              <div v-if="convertResult.skippedRows > 0">
-                <p><strong>跳过（key为空）:</strong> {{ convertResult.skippedRows }} 行</p>
-              </div>
-              <div v-if="convertResult.duplicateKeys && convertResult.duplicateKeys.length > 0">
-                <p><strong>发现重复key:</strong> {{ convertResult.duplicateKeys.length }} 个（重复的key会被覆盖，导致数据丢失）</p>
-              </div>
-            </div>
-      </div>
     </div>
 
     <template #footer>
@@ -99,7 +67,6 @@ const visible = ref(props.modelValue);
 const uploadRef = ref<UploadInstance>();
 const fileList = ref<UploadFile[]>([]);
 const converting = ref(false);
-const convertResult = ref<any>(null);
 
 // 同步 v-model 状态
 watch(
@@ -133,7 +100,6 @@ const formatFileSize = (bytes: number | undefined): string => {
 const handleClose = () => {
   uploadRef.value?.clearFiles();
   fileList.value = [];
-  convertResult.value = null;
   visible.value = false;
 };
 
@@ -264,52 +230,9 @@ const handleConvert = async () => {
       downloadJson(zhHKJson, 'zh-HK.json');
     }
 
-    // 构建统计信息
-    const zhCNCount = Object.keys(zhCNJson).length;
-    const enUSCount = Object.keys(enUSJson).length;
-    const zhHKCount = Object.keys(zhHKJson).length;
-    const uniqueKeyCount = keyMap.size;
-    
-    // 检查数据是否一致
-    const isConsistent = totalRows === zhCNCount && totalRows === uniqueKeyCount && skippedRows === 0 && duplicateKeysInfo.length === 0;
-    
-    // 保存转换结果（用于在弹窗中显示）
-    convertResult.value = {
-      isConsistent,
-      totalRows,
-      processedRows,
-      skippedRows,
-      uniqueKeyCount,
-      zhCNCount,
-      enUSCount,
-      zhHKCount,
-      duplicateKeys: duplicateKeysInfo,
-      title: isConsistent 
-        ? '转换成功' 
-        : `数据不一致：Excel有${totalRows}行，但JSON只有${zhCNCount}条数据`
-    };
-    
-    console.log('转换统计:', { 
-      totalRows, 
-      processedRows, 
-      skippedRows, 
-      uniqueKeyCount,
-      duplicateKeysCount: duplicateKeysInfo.length,
-      duplicateKeys: duplicateKeysInfo.slice(0, 20),
-      zhCNCount, 
-      enUSCount, 
-      zhHKCount,
-      isConsistent
-    });
-    
-    // 如果数据一致，只显示简单提示；如果不一致，详细信息会在弹窗中显示
-    if (isConsistent) {
-      ElMessage.success('转换成功！');
-      handleClose();
-    } else {
-      // 数据不一致时，不关闭弹窗，让用户查看详细信息
-      ElMessage.warning('转换完成，但数据不一致，请查看下方详情');
-    }
+    // 转换成功，显示成功提示并关闭弹窗
+    ElMessage.success('转换成功！');
+    handleClose();
   } catch (error) {
     console.error('转换失败:', error);
     ElMessage.error(`转换失败: ${error instanceof Error ? error.message : '未知错误'}`);
@@ -356,28 +279,5 @@ const handleConvert = async () => {
   color: #909399;
   font-size: 12px;
   margin-top: 8px;
-}
-
-.convert-result {
-  margin-top: 20px;
-}
-
-.result-details {
-  margin-top: 10px;
-  font-size: 14px;
-  line-height: 1.8;
-}
-
-.result-details p {
-  margin: 8px 0;
-}
-
-.result-details ul {
-  margin: 8px 0;
-  padding-left: 20px;
-}
-
-.result-details li {
-  margin: 4px 0;
 }
 </style>
