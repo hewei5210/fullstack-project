@@ -17,6 +17,11 @@ const TranslationSchema = new Schema<ITranslation>({
     'zh-HK': { type: String, required: true },
     'en-US': { type: String, required: true }
   },
+  /** 所属项目，数组存储 projectCode；空数组表示属于所有项目 */
+  projectCode: {
+    type: [String],
+    default: []
+  },
   status: {
     type: String,
     enum: ['ready', 'pending', 'error'],

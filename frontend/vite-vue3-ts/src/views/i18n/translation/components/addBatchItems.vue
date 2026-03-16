@@ -37,7 +37,7 @@
             点击下载Excel模板
           </el-link>
           <span style="font-size: small; margin-left: 10px">
-            按照模板格式填写新增翻译项，并上传模板。
+            按照模板格式填写新增翻译项，并上传模板。所属项目可为空（默认所有项目），不为空请填写 projectCode 并用英文逗号隔开。
           </span>
         </div>
       </template>

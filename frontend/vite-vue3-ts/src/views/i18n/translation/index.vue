@@ -64,6 +64,26 @@
         </el-dropdown>
       </div>
 
+      <!-- 所属项目筛选（多选） -->
+      <div class="project-filter">
+        <el-select
+          v-model="selectedProjectCodes"
+          multiple
+          collapse-tags
+          collapse-tags-tooltip
+          placeholder="所属项目"
+          class="project-select"
+          clearable
+          @change="onProjectFilterChange"
+        >
+          <el-option
+            v-for="item in PROJECT_TAGS"
+            :key="item.projectCode"
+            :label="item.label"
+            :value="item.projectCode"
+          />
+        </el-select>
+      </div>
       <!-- 搜索区域 -->
       <div class="search-area">
         <el-input
@@ -144,6 +164,11 @@
           </div>
         </template>
       </el-table-column>
+      <el-table-column label="所属项目" min-width="140" show-overflow-tooltip>
+        <template #default="scope">
+          <span>{{ formatProjectCodes(scope.row.projectCode) }}</span>
+        </template>
+      </el-table-column>
       <el-table-column label="操作" width="180" fixed="right">
         <template #default="scope">
           <el-button
@@ -196,8 +221,8 @@
       :current-delete-item="currentDeleteItem"
       @submit="handleSubmitSuccess"
     />
-    <ExportDialog v-model="exportDialogVisible" />
-    <ExportExcelDialog v-model="exportExcelDialogVisible" />
+    <ExportDialog v-model="exportDialogVisible" :selected-project-codes="selectedProjectCodes" />
+    <ExportExcelDialog v-model="exportExcelDialogVisible" :selected-project-codes="selectedProjectCodes" />
     <ExcelToJsonDialog v-model="excelToJsonDialogVisible" />
   </div>
 </template>
@@ -241,8 +266,35 @@ interface Translation {
   target: {
     [key: string]: string;
   };
+  projectCode?: string[];
   status: string;
 }
+
+// 所属项目选项（静态数据，与新增/编辑弹窗和后端保持一致）
+const PROJECT_TAGS = [
+  { label: "云管", projectCode: "cda_cem_client" },
+  { label: "工作台", projectCode: "cem-quality-protal" },
+  { label: "二级管", projectCode: "cutt_rpmp_porta" },
+  { label: "订购页", projectCode: "cloud_computer_client" },
+  { label: "控制台", projectCode: "computer_entconsole_client" },
+  { label: "企业门户", projectCode: "ccemp-web" },
+] as const;
+
+// 项目筛选
+const selectedProjectCodes = ref<string[]>([]);
+
+const onProjectFilterChange = () => {
+  currentPage.value = 1;
+  getData();
+};
+
+// 将 projectCode 数组格式化为展示文案（优先显示 label）
+const formatProjectCodes = (codes?: string[]) => {
+  if (!codes || codes.length === 0) return "所有项目";
+  return codes
+    .map((code) => PROJECT_TAGS.find((t) => t.projectCode === code)?.label || code)
+    .join("、");
+};
 
 // 搜索相关
 type PlaceholderKey = "id" | "zh-CN" | "en-US" | "zh-HK";
@@ -266,13 +318,16 @@ const searchData = () => {
     ? searchContent.value 
     : searchContent.value.replace(/\$/g, '\\$');
   
-  const params = {
+  const params: Record<string, unknown> = {
     page: currentPage.value,
     pageSize: pageSize.value,
     searchSelect: select.value,
     searchContent: escapedSearchContent,
-    exactMatch: exactMatch.value, // 传递精准搜索参数（computed值）
+    exactMatch: exactMatch.value,
   };
+  if (selectedProjectCodes.value.length > 0) {
+    params.projectCodes = selectedProjectCodes.value;
+  }
   http.get("/api/search", params).then((res) => {
     if (res.data.status === 200) {
       tableData.value = res.data.data.data;
@@ -299,10 +354,13 @@ const getData = () => {
     searchData();
     return;
   }
-  const params = {
+  const params: Record<string, unknown> = {
     page: currentPage.value,
     pageSize: pageSize.value,
   };
+  if (selectedProjectCodes.value.length > 0) {
+    params.projectCodes = selectedProjectCodes.value;
+  }
   http.get("/api/getBingList", params).then((res) => {
     if (res.data.status === 200) {
       tableData.value = res.data.data.data;
@@ -366,6 +424,7 @@ const editDialogVisible = ref(false); // 新增编辑相关状态
 const currentEditItem = ref<Translation>({
   id: "",
   target: { "zh-CN": "", "en-US": "", "zh-HK": "" },
+  projectCode: [],
   status: "",
 });
 const showEditDialog = (row: Translation) => {
@@ -405,7 +464,7 @@ const copyToClipboard = async (text: string, type: string) => {
 };
 
 onMounted(() => {
-  getData(); // 页面加载时自动触发
+  getData();
 });
 </script>
 <style scoped>
@@ -442,6 +501,14 @@ onMounted(() => {
 .button-group {
   display: flex;
   flex-shrink: 0;
+}
+
+.project-filter {
+  flex-shrink: 0;
+}
+.project-select {
+  width: 220px;
+  min-width: 180px;
 }
 
 .search-area {

@@ -11,14 +11,26 @@
           <el-checkbox v-model="exportForm.includeId">
             包含翻译项ID
           </el-checkbox>
+          <el-checkbox v-model="exportForm.includeProject" style="margin-left: 16px;">
+            包含所属项目
+          </el-checkbox>
         </el-form-item>
         <el-form-item label="文件说明">
           <div class="file-description">
-            <p v-if="exportForm.includeId">
+            <p v-if="exportForm.includeId && exportForm.includeProject">
+              将导出5列数据：翻译项ID、翻译项、翻译项-英文、翻译项-繁体、所属项目
+            </p>
+            <p v-else-if="exportForm.includeId">
               将导出4列数据：翻译项ID、翻译项、翻译项-英文、翻译项-繁体
+            </p>
+            <p v-else-if="exportForm.includeProject">
+              将导出4列数据：翻译项、翻译项-英文、翻译项-繁体、所属项目
             </p>
             <p v-else>
               将导出3列数据：翻译项、翻译项-英文、翻译项-繁体
+            </p>
+            <p v-if="selectedProjectCodesForExport.length > 0" class="project-tip">
+              将按当前列表所选项目筛选导出
             </p>
           </div>
         </el-form-item>
@@ -34,36 +46,39 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, watch } from "vue";
+import { ref, watch, computed } from "vue";
 import { ElMessage } from "element-plus";
 
-const props = defineProps<{ modelValue: boolean }>();
+const props = withDefaults(
+  defineProps<{ modelValue: boolean; selectedProjectCodes?: string[] }>(),
+  { selectedProjectCodes: () => [] }
+);
 const emit = defineEmits(["update:modelValue"]);
 const visible = ref(props.modelValue);
 const exporting = ref(false);
 
-// 同步 v-model 状态
 watch(
   () => props.modelValue,
   (val) => {
     visible.value = val;
   }
 );
-// 必须把弹窗的状态也同步给父组件，要不然下次打开的时候会有问题
 watch(visible, (val) => emit("update:modelValue", val));
 
 const exportForm = ref({
-  includeId: false
+  includeId: false,
+  includeProject: false
 });
 
 const BASE_URL = import.meta.env.VITE_APP_API_BASE;
+
+const selectedProjectCodesForExport = computed(() => props.selectedProjectCodes || []);
 
 const handleExport = () => {
   if (exporting.value) return;
   
   exporting.value = true;
 
-  // 使用 fetch 方式下载文件
   const token = localStorage.getItem('token');
   if (!token) {
     ElMessage.error("请先登录");
@@ -71,7 +86,12 @@ const handleExport = () => {
     return;
   }
 
-  fetch(`${BASE_URL}/api/exportExcel?includeId=${exportForm.value.includeId}`, {
+  let url = `${BASE_URL}/api/exportExcel?includeId=${exportForm.value.includeId}&includeProject=${exportForm.value.includeProject}`;
+  if (selectedProjectCodesForExport.value.length > 0) {
+    url += `&projectCodes=${selectedProjectCodesForExport.value.join(",")}`;
+  }
+
+  fetch(url, {
     method: 'GET',
     headers: {
       'Authorization': `Bearer ${token}`,
@@ -96,7 +116,8 @@ const handleExport = () => {
     document.body.removeChild(a);
     visible.value = false;
     ElMessage.success('EXCEL文件导出成功');
-    exportForm.value.includeId = false; // 重置选择
+    exportForm.value.includeId = false;
+    exportForm.value.includeProject = false;
   })
   .catch((error) => {
     console.error('导出EXCEL失败:', error);
@@ -121,6 +142,11 @@ const handleExport = () => {
 
 .file-description p {
   margin: 5px 0;
+}
+
+.file-description .project-tip {
+  color: var(--el-color-primary);
+  font-size: 13px;
 }
 
 :deep(.el-checkbox__label) {

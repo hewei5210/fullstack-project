@@ -10,6 +10,26 @@ const upload = multer({ storage: multer.memoryStorage() });
 // 应用认证中间件
 router.use(authMiddleware);
 
+// 获取项目标签列表（用于列表筛选、新增/编辑所属项目下拉）
+router.get('/projectTags', async (_req: IAuthenticatedRequest, res: Response) => {
+  try {
+    const list = await translationService.getProjectTags();
+    const response: IApiResponse = {
+      status: 200,
+      message: 'success',
+      data: list
+    };
+    return res.status(200).json(response);
+  } catch (error) {
+    const response: IApiResponse = {
+      status: 400,
+      message: error instanceof Error ? error.message : '获取失败',
+      data: ''
+    };
+    return res.status(400).json(response);
+  }
+});
+
 // 获取翻译列表
 router.get('/getBingList', async (req: IAuthenticatedRequest, res: Response) => {
   try {
@@ -117,12 +137,18 @@ router.delete('/delBing', async (req: IAuthenticatedRequest, res: Response) => {
   }
 });
 
-// 导出JSON数据
+// 导出JSON数据（支持按 projectCodes 筛选）
 router.get('/exportBing', async (req: IAuthenticatedRequest, res: Response) => {
   try {
-    const { langType = 'zh-CN' } = req.query;
+    const { langType = 'zh-CN', projectCodes } = req.query;
+    const codes = typeof projectCodes === 'string' && projectCodes
+      ? projectCodes.split(',').map((s: string) => s.trim()).filter(Boolean)
+      : undefined;
     
-    const fileInfo = await translationService.exportJsonData(langType as 'zh-CN' | 'en-US' | 'zh-HK');
+    const fileInfo = await translationService.exportJsonData(
+      langType as 'zh-CN' | 'en-US' | 'zh-HK',
+      codes
+    );
     
     // 检查文件是否存在
     const fs = require('fs');
@@ -162,12 +188,19 @@ router.get('/exportBing', async (req: IAuthenticatedRequest, res: Response) => {
   }
 });
 
-// 导出Excel数据
+// 导出Excel数据（支持 includeId、includeProject、projectCodes）
 router.get('/exportExcel', async (req: IAuthenticatedRequest, res: Response) => {
   try {
-    const { includeId = false } = req.query;
+    const { includeId = false, includeProject = false, projectCodes } = req.query;
+    const codes = typeof projectCodes === 'string' && projectCodes
+      ? projectCodes.split(',').map((s: string) => s.trim()).filter(Boolean)
+      : undefined;
     
-    const workbook = await translationService.exportExcelData(includeId === 'true');
+    const workbook = await translationService.exportExcelData(
+      includeId === 'true',
+      includeProject === 'true',
+      codes
+    );
     
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     res.setHeader('Content-Disposition', 'attachment; filename=translation_data.xlsx');

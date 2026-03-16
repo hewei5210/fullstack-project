@@ -63,6 +63,24 @@
           clearable
         />
       </el-form-item>
+      <el-form-item label="所属项目">
+        <el-select
+          v-model="formData.projectCode"
+          multiple
+          placeholder="不选则属于所有项目"
+          class="translation-input add-item-project-select"
+          popper-class="add-item-project-select-dropdown"
+          clearable
+        >
+          <el-option
+            v-for="item in PROJECT_TAGS"
+            :key="item.projectCode"
+            :label="item.label"
+            :value="item.projectCode"
+          />
+        </el-select>
+        <div class="form-tip">不选择则默认为所有项目</div>
+      </el-form-item>
     </el-form>
 
     <template #footer>
@@ -75,10 +93,15 @@
 <script setup lang="ts">
 import { http } from "../../../../net/http";
 import { ref, reactive, watch } from "vue";
-import { ElMessage } from "element-plus"; // Import ElMessage as a value
+import { ElMessage } from "element-plus";
 import type { FormInstance, FormRules } from "element-plus";
 import { handleError } from "../../../../utils/errorHandler";
 import { callBailianAPI } from "../../../../utils/bailianAPI";
+
+interface ProjectTag {
+  label: string;
+  projectCode: string;
+}
 
 interface TranslationItem {
   id: string;
@@ -88,6 +111,7 @@ interface TranslationItem {
     "en-US": string;
     "zh-HK": string;
   };
+  projectCode?: string[];
 }
 
 const props = defineProps<{
@@ -97,10 +121,20 @@ const props = defineProps<{
 
 const emit = defineEmits(["update:modelValue", "submit"]);
 
+// 所属项目选项（静态数据，与后端 PROJECT_TAGS 保持一致）
+const PROJECT_TAGS: ProjectTag[] = [
+  { label: "云管", projectCode: "cda_cem_client" },
+  { label: "工作台", projectCode: "cem-quality-protal" },
+  { label: "二级管", projectCode: "cutt_rpmp_porta" },
+  { label: "订购页", projectCode: "cloud_computer_client" },
+  { label: "控制台", projectCode: "computer_entconsole_client" },
+  { label: "企业门户", projectCode: "ccemp-web" },
+];
+
 const formRef = ref<FormInstance>();
 const visible = ref(props.modelValue);
 const translating = ref(false);
-// 初始化表单数据
+
 const formData = reactive<TranslationItem>({
   id: props.initialData?.id || "",
   source: props.initialData?.source || "",
@@ -109,6 +143,7 @@ const formData = reactive<TranslationItem>({
     "en-US": props.initialData?.target["en-US"] || "",
     "zh-HK": props.initialData?.target["zh-HK"] || "",
   },
+  projectCode: props.initialData?.projectCode ?? [],
 });
 
 const rules = reactive<FormRules>({
@@ -130,6 +165,7 @@ const handleSubmit = async () => {
     await http.post("/api/addBing", {
       source: formData.source,
       target: formData.target,
+      projectCode: Array.isArray(formData.projectCode) ? formData.projectCode : [],
     });
     
     ElMessage.success("添加成功");
@@ -273,5 +309,18 @@ const handleAITranslate = async () => {
 .ai-translate-btn:disabled {
   color: var(--el-text-color-disabled);
   cursor: not-allowed;
+}
+
+.form-tip {
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+  margin-top: 4px;
+}
+</style>
+<!-- 所属项目下拉面板与输入框同宽（下拉渲染在 body，不加 scoped） -->
+<style>
+.add-item-project-select-dropdown.el-select-dropdown {
+  min-width: 320px !important;
+  box-sizing: border-box;
 }
 </style>

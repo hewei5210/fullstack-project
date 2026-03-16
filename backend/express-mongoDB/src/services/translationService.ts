@@ -8,22 +8,60 @@ import {
   ISearchQuery, 
   ICreateTranslation, 
   IUpdateTranslation,
-  IExportQuery,
-  ITranslation 
+  ITranslation,
+  IProjectTag 
 } from '../types';
 
+// 项目标签静态数据（可通过接口获取，便于后续改为配置或数据库）
+const PROJECT_TAGS: IProjectTag[] = [
+  { label: '订购页', projectCode: 'cloud_computer_client' },
+  { label: '控制台', projectCode: 'computer_entconsole_client' },
+  { label: '企业门户', projectCode: 'ccemp-web' },
+  { label: '云管', projectCode: 'cda_cem_client' },
+  { label: '工作台', projectCode: 'cem-quality-protal' },
+  { label: '二级管', projectCode: 'cutt_rpmp_porta' },
+];
+
 class TranslationService {
+  // 获取项目标签列表
+  async getProjectTags(): Promise<IProjectTag[]> {
+    return PROJECT_TAGS;
+  }
+
+  // 构建所属项目筛选条件：未传或空数组则不过滤；否则筛选 projectCode 包含任一选中 或 为空数组/不存在（属于所有项目）
+  private buildProjectFilter(projectCodes?: string[]): any {
+    if (!projectCodes || projectCodes.length === 0) return {};
+    return {
+      $or: [
+        { projectCode: { $in: projectCodes } },
+        { projectCode: { $exists: false } },
+        { projectCode: [] },
+        { projectCode: { $size: 0 } }
+      ]
+    };
+  }
+
+  private normalizeProjectCodes(projectCodes?: string[] | string): string[] | undefined {
+    if (projectCodes == null || projectCodes === '') return undefined;
+    if (Array.isArray(projectCodes)) return projectCodes.length ? projectCodes : undefined;
+    const s = String(projectCodes).trim();
+    if (!s) return undefined;
+    return s.split(',').map((c: string) => c.trim()).filter(Boolean);
+  }
+
   // 获取所有翻译项
   async getList(query: IPaginationQuery = {}): Promise<IPaginationResponse<ITranslation>> {
-    const { page = 1, pageSize = 10, sort = 'id' } = query;
+    const { page = 1, pageSize = 10, sort = 'id', projectCodes } = query;
     const skip = (page - 1) * pageSize;
     
-    const translations = await Translation.find()
+    const filter = this.buildProjectFilter(this.normalizeProjectCodes(projectCodes));
+    
+    const translations = await Translation.find(filter)
       .sort(sort)
       .skip(skip)
       .limit(parseInt(pageSize.toString()));
     
-    const total = await Translation.countDocuments();
+    const total = await Translation.countDocuments(filter);
     
     return {
       data: translations,
@@ -49,34 +87,36 @@ class TranslationService {
       }
     }
     
-    let query: any = {};
+    const projectFilter = this.buildProjectFilter(
+      this.normalizeProjectCodes(searchParams.projectCodes)
+    );
+    let contentQuery: any = {};
     if (searchContent) {
       if (exactMatch) {
-        // 精准搜索：精确匹配
         if (searchSelect === 'id') {
-          query.id = searchContent;
+          contentQuery.id = searchContent;
         } else if (searchSelect === 'zh-CN') {
-          // 搜索source字段，因为zh-CN的内容存储在source中
-          query.source = searchContent;
+          contentQuery.source = searchContent;
         } else if (searchSelect === 'en-US') {
-          query['target.en-US'] = searchContent;
+          contentQuery['target.en-US'] = searchContent;
         } else if (searchSelect === 'zh-HK') {
-          query['target.zh-HK'] = searchContent;
+          contentQuery['target.zh-HK'] = searchContent;
         }
       } else {
-        // 模糊搜索：使用正则表达式
         if (searchSelect === 'id') {
-          query.id = { $regex: searchContent, $options: 'i' };
+          contentQuery.id = { $regex: searchContent, $options: 'i' };
         } else if (searchSelect === 'zh-CN') {
-          // 搜索source字段，因为zh-CN的内容存储在source中
-          query.source = { $regex: searchContent, $options: 'i' };
+          contentQuery.source = { $regex: searchContent, $options: 'i' };
         } else if (searchSelect === 'en-US') {
-          query['target.en-US'] = { $regex: searchContent, $options: 'i' };
+          contentQuery['target.en-US'] = { $regex: searchContent, $options: 'i' };
         } else if (searchSelect === 'zh-HK') {
-          query['target.zh-HK'] = { $regex: searchContent, $options: 'i' };
+          contentQuery['target.zh-HK'] = { $regex: searchContent, $options: 'i' };
         }
       }
     }
+    const query = Object.keys(projectFilter).length > 0
+      ? (Object.keys(contentQuery).length > 0 ? { $and: [projectFilter, contentQuery] } : projectFilter)
+      : (Object.keys(contentQuery).length > 0 ? contentQuery : {});
     
     const skip = (page - 1) * pageSize;
     
@@ -98,7 +138,7 @@ class TranslationService {
 
   // 添加翻译项
   async add(translationData: ICreateTranslation): Promise<ITranslation> {
-    const { target } = translationData;
+    const { target, projectCode } = translationData;
     
     // 检查翻译项是否已存在
     const existingTranslation = await Translation.findOne({ source: target['zh-CN'] });
@@ -112,7 +152,8 @@ class TranslationService {
     const translation = new Translation({
       id,
       source: target['zh-CN'],
-      target
+      target,
+      projectCode: Array.isArray(projectCode) ? projectCode : []
     });
     
     return await translation.save();
@@ -120,11 +161,16 @@ class TranslationService {
 
   // 更新翻译项
   async update(translationData: IUpdateTranslation): Promise<ITranslation> {
-    const { id, source, target } = translationData;
+    const { id, source, target, projectCode } = translationData;
+    
+    const updateFields: any = { source, target };
+    if (projectCode !== undefined) {
+      updateFields.projectCode = Array.isArray(projectCode) ? projectCode : [];
+    }
     
     const translation = await Translation.findOneAndUpdate(
       { id },
-      { source, target },
+      updateFields,
       { new: true, runValidators: true }
     );
     
@@ -173,9 +219,10 @@ class TranslationService {
     return `ccfe-${expectedNumber.toString().padStart(9, '0')}`;
   }
 
-  // 导出Json数据
-  async exportJsonData(langType: 'zh-CN' | 'en-US' | 'zh-HK' = 'zh-CN') {
-    const translations = await Translation.find().sort('id');
+  // 导出Json数据（支持按 projectCodes 筛选）
+  async exportJsonData(langType: 'zh-CN' | 'en-US' | 'zh-HK' = 'zh-CN', projectCodes?: string[]) {
+    const filter = this.buildProjectFilter(this.normalizeProjectCodes(projectCodes));
+    const translations = await Translation.find(filter).sort('id');
     
     let jsonData: Record<string, string> = {};
 
@@ -215,56 +262,51 @@ class TranslationService {
     };
   }
 
-  // 下载模板
+  // 下载模板（含所属项目列，填写 projectCode 英文逗号隔开，空表示所有项目）
   downloadTemplate(): ExcelJS.Workbook {
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet('翻译模板');
     
-    // 设置表头
     worksheet.columns = [
       { header: "翻译项", key: "zh-CN", width: 30 },
       { header: "翻译项-英文", key: "en-US", width: 30 },
       { header: "翻译项-繁体", key: "zh-HK", width: 30 },
+      { header: "所属项目", key: "projectCode", width: 40 },
     ];
     
     return workbook;
   }
 
-  // 导出EXCEL数据
-  async exportExcelData(includeId = false): Promise<ExcelJS.Workbook> {
-    const translations = await Translation.find().sort('id');
+  // 导出EXCEL数据（支持按 projectCodes 筛选、includeId、includeProject）
+  async exportExcelData(includeId = false, includeProject = false, projectCodes?: string[]): Promise<ExcelJS.Workbook> {
+    const filter = this.buildProjectFilter(this.normalizeProjectCodes(projectCodes));
+    const translations = await Translation.find(filter).sort('id');
     
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet('翻译数据');
     
-    // 根据是否包含ID设置表头
-    if (includeId) {
-      worksheet.columns = [
-        { header: "翻译项ID", key: "id", width: 20 },
-        { header: "翻译项", key: "zh-CN", width: 30 },
-        { header: "翻译项-英文", key: "en-US", width: 30 },
-        { header: "翻译项-繁体", key: "zh-HK", width: 30 },
-      ];
-    } else {
-      worksheet.columns = [
-        { header: "翻译项", key: "zh-CN", width: 30 },
-        { header: "翻译项-英文", key: "en-US", width: 30 },
-        { header: "翻译项-繁体", key: "zh-HK", width: 30 },
-      ];
-    }
+    const cols: any[] = [];
+    if (includeId) cols.push({ header: "翻译项ID", key: "id", width: 20 });
+    cols.push(
+      { header: "翻译项", key: "zh-CN", width: 30 },
+      { header: "翻译项-英文", key: "en-US", width: 30 },
+      { header: "翻译项-繁体", key: "zh-HK", width: 30 }
+    );
+    if (includeProject) cols.push({ header: "所属项目", key: "projectCode", width: 40 });
+    worksheet.columns = cols;
     
-    // 添加数据行
     translations.forEach(translation => {
       const rowData: any = {
         'zh-CN': translation.source || '',
         'en-US': translation.target['en-US'] || '',
         'zh-HK': translation.target['zh-HK'] || ''
       };
-      
-      if (includeId) {
-        rowData.id = translation.id;
+      if (includeId) rowData.id = translation.id;
+      if (includeProject) {
+        rowData.projectCode = Array.isArray(translation.projectCode) && translation.projectCode.length > 0
+          ? translation.projectCode.join(',')
+          : '';
       }
-      
       worksheet.addRow(rowData);
     });
     
@@ -380,13 +422,20 @@ class TranslationService {
         continue;
       }
 
-      // 数据验证通过，添加到有效数据列表
+      // 解析所属项目：空=所有项目，否则 projectCode 英文逗号隔开
+      let projectCode: string[] = [];
+      const projectCell = row['所属项目'] || row.projectCode;
+      if (projectCell != null && String(projectCell).trim() !== '') {
+        projectCode = String(projectCell).split(',').map((c: string) => c.trim()).filter(Boolean);
+      }
+
       validData.push({
         rowIndex: i + 2,
         data: {
           source: cellValue,
           'en-US': row['翻译项-英文'] || row['target(en-US)'] || '',
-          'zh-HK': row['翻译项-繁体'] || row['target(zh-HK)'] || ''
+          'zh-HK': row['翻译项-繁体'] || row['target(zh-HK)'] || '',
+          projectCode
         }
       });
     }
@@ -415,7 +464,8 @@ class TranslationService {
               'zh-CN': item.data.source,
               'en-US': item.data['en-US'],
               'zh-HK': item.data['zh-HK']
-            }
+            },
+            projectCode: item.data.projectCode || []
           });
 
           // 保存到数据库
@@ -441,17 +491,17 @@ class TranslationService {
     };
   }
 
-  // 下载批量修改模板
+  // 下载批量修改模板（含所属项目列）
   downloadUpdateTemplate(): ExcelJS.Workbook {
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet('批量修改模板');
     
-    // 设置表头 - 包含翻译项ID
     worksheet.columns = [
       { header: "翻译项ID", key: "id", width: 20 },
       { header: "翻译项", key: "zh-CN", width: 30 },
       { header: "翻译项-英文", key: "en-US", width: 30 },
       { header: "翻译项-繁体", key: "zh-HK", width: 30 },
+      { header: "所属项目", key: "projectCode", width: 40 },
     ];
     
     return workbook;
@@ -539,22 +589,27 @@ class TranslationService {
       }
 
       try {
-        // 构建更新数据
-        const updateData = {
+        // 解析所属项目：空=所有项目，否则 projectCode 英文逗号隔开
+        let projectCode: string[] = [];
+        const projectCell = row['所属项目'] || row.projectCode;
+        if (projectCell != null && String(projectCell).trim() !== '') {
+          projectCode = String(projectCell).split(',').map((c: string) => c.trim()).filter(Boolean);
+        }
+
+        const updateData: any = {
           source: source || '',
           target: {
             'zh-CN': source || '',
             'en-US': row['翻译项-英文'] || row['target(en-US)'] || '',
             'zh-HK': row['翻译项-繁体'] || row['target(zh-HK)'] || ''
-          }
+          },
+          projectCode
         };
 
-        // 数据校验
         if (!updateData.source) {
           throw new Error('翻译项内容不能为空');
         }
 
-        // 执行更新
         const updatedTranslation = await Translation.findOneAndUpdate(
           { id: translationId },
           updateData,

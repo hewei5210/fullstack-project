@@ -23,9 +23,17 @@ export interface ITranslation extends Document {
     'en-US': string;
     'zh-HK': string;
   };
+  /** 所属项目，数组存储 projectCode；空数组表示属于所有项目 */
+  projectCode?: string[];
   status: string;
   createdAt?: Date;
   updatedAt?: Date;
+}
+
+// 项目标签（用于下拉选项）
+export interface IProjectTag {
+  label: string;
+  projectCode: string;
 }
 
 // 认证相关类型
@@ -85,6 +93,8 @@ export interface IPaginationQuery {
   page?: number;
   pageSize?: number;
   sort?: string;
+  /** 按所属项目筛选，不传或空则不过滤 */
+  projectCodes?: string[];
 }
 
 export interface IPaginationResponse<T> {
@@ -100,16 +110,18 @@ export interface ISearchQuery extends IPaginationQuery {
   searchSelect?: string;
   searchContent?: string;
   exactMatch?: boolean; // 精准搜索开关
+  projectCodes?: string[];
 }
 
 // 翻译项操作类型
 export interface ICreateTranslation {
-  id: string;
+  id?: string;
   target: {
     'zh-CN': string;
     'en-US': string;
     'zh-HK': string;
   };
+  projectCode?: string[];
 }
 
 export interface IUpdateTranslation {
@@ -120,6 +132,7 @@ export interface IUpdateTranslation {
     'en-US': string;
     'zh-HK': string;
   };
+  projectCode?: string[];
 }
 
 // 批量操作类型
@@ -138,6 +151,7 @@ export interface IBatchDeleteTranslations {
 // 导出类型
 export interface IExportQuery {
   langType: 'zh-CN' | 'en-US' | 'zh-HK';
+  projectCodes?: string[];
 }
 
 // CSV同步类型

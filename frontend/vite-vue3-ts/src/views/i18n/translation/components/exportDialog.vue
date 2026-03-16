@@ -33,7 +33,10 @@
 <script lang="ts" setup>
 import { ref, watch } from "vue";
 import { ElMessage } from "element-plus";
-const props = defineProps<{ modelValue: boolean }>();
+const props = withDefaults(
+  defineProps<{ modelValue: boolean; selectedProjectCodes?: string[] }>(),
+  { selectedProjectCodes: () => [] }
+);
 const emit = defineEmits(["update:modelValue"]);
 const visible = ref(props.modelValue);
 // 同步 v-model 状态
@@ -103,9 +106,13 @@ const handleExport = async () => {
   }
 };
 
-// 下载单个文件的辅助函数
+// 下载单个文件的辅助函数（支持按所选项目筛选）
 const downloadSingleFile = async (langType: string, langName: string, token: string) => {
-  const response = await fetch(`${BASE_URL}/api/exportBing?langType=${langType}`, {
+  let requestUrl = `${BASE_URL}/api/exportBing?langType=${langType}`;
+  if (props.selectedProjectCodes && props.selectedProjectCodes.length > 0) {
+    requestUrl += `&projectCodes=${props.selectedProjectCodes.join(",")}`;
+  }
+  const response = await fetch(requestUrl, {
     method: 'GET',
     headers: {
       'Authorization': `Bearer ${token}`,
@@ -119,14 +126,14 @@ const downloadSingleFile = async (langType: string, langName: string, token: str
   const blob = await response.blob();
   
   // 创建下载链接
-  const url = window.URL.createObjectURL(blob);
+  const downloadUrl = window.URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.style.display = 'none';
-  a.href = url;
+  a.href = downloadUrl;
   a.download = `${langType}.json`;
   document.body.appendChild(a);
   a.click();
-  window.URL.revokeObjectURL(url);
+  window.URL.revokeObjectURL(downloadUrl);
   document.body.removeChild(a);
 };
 </script>
