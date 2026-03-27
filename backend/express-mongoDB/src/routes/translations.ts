@@ -380,6 +380,46 @@ router.post('/batchGetIds', upload.single('file'), async (req: IAuthenticatedReq
   }
 });
 
+// 通过JSON按翻译项ID批量打标签
+router.post('/batchTagByJson', upload.single('file'), async (req: IAuthenticatedRequest, res: Response) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({
+        status: 400,
+        message: '请上传文件',
+        data: ''
+      });
+    }
+
+    const result = await translationService.batchTagByJson(
+      req.file.buffer,
+      req.file.originalname,
+      req.body?.projectCode
+    );
+    const successItems = Array.isArray(result?.data?.successItems)
+      ? result.data.successItems.map((item: any) => toDetailItem(item))
+      : [];
+    await writeOperationLog(
+      req,
+      '批量编辑翻译项',
+      successItems,
+      `批量打标签：成功 ${result?.data?.success || 0} 条，失败 ${result?.data?.errors?.length || 0} 条`
+    );
+
+    return res.status(200).json({
+      status: 200,
+      message: result.message,
+      data: result.data
+    });
+  } catch (error) {
+    return res.status(400).json({
+      status: 400,
+      message: error instanceof Error ? error.message : '批量打标签失败',
+      data: ''
+    });
+  }
+});
+
 // 导出批量获取ID结果
 router.post('/exportGetIdsResult', async (req: IAuthenticatedRequest, res: Response) => {
   try {

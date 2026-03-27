@@ -59,6 +59,10 @@
                 <el-icon style="margin-right: 8px;"><Upload /></el-icon>
                 <span>Excel转JSON</span>
               </el-dropdown-item>
+              <el-dropdown-item @click="tagByJsonDialog" divided>
+                <el-icon style="margin-right: 8px;"><CollectionTag /></el-icon>
+                <span>打标签</span>
+              </el-dropdown-item>
             </el-dropdown-menu>
           </template>
         </el-dropdown>
@@ -224,6 +228,7 @@
     <ExportDialog v-model="exportDialogVisible" :selected-project-codes="selectedProjectCodes" />
     <ExportExcelDialog v-model="exportExcelDialogVisible" :selected-project-codes="selectedProjectCodes" />
     <ExcelToJsonDialog v-model="excelToJsonDialogVisible" />
+    <TagByJsonDialog v-model="tagByJsonDialogVisible" @submit="handleSubmitSuccess" />
   </div>
 </template>
 
@@ -240,7 +245,8 @@ const DeleteId = defineAsyncComponent(() => import("./components/deleteItem.vue"
 const ExportDialog = defineAsyncComponent(() => import("./components/exportDialog.vue"));
 const ExportExcelDialog = defineAsyncComponent(() => import("./components/exportExcelDialog.vue"));
 const ExcelToJsonDialog = defineAsyncComponent(() => import("./components/excelToJsonDialog.vue"));
-import { Plus, Download, Upload, Search, Edit, Delete, MoreFilled } from "@element-plus/icons-vue";
+const TagByJsonDialog = defineAsyncComponent(() => import("./components/tagByJsonDialog.vue"));
+import { Plus, Download, Upload, Search, Edit, Delete, MoreFilled, CollectionTag } from "@element-plus/icons-vue";
 import { ElMessage } from "element-plus";
 
 // 分页
@@ -405,6 +411,12 @@ const exportExcelDialog = () => {
 const excelToJsonDialogVisible = ref(false);
 const excelToJsonDialog = () => {
   excelToJsonDialogVisible.value = true;
+};
+
+// 控制按JSON打标签弹窗
+const tagByJsonDialogVisible = ref(false);
+const tagByJsonDialog = () => {
+  tagByJsonDialogVisible.value = true;
 };
 
 // 批量获取ID弹窗

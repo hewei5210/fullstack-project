@@ -950,6 +950,114 @@ class TranslationService {
       message: `批量删除 ${results.total} 条数据，成功删除 ${results.success} 条数据，失败 ${results.errors.length} 条数据`
     };
   }
+
+  // 通过JSON按翻译项ID批量打标签
+  async batchTagByJson(
+    fileBuffer: Buffer,
+    fileName: string = '',
+    projectCodeInput?: string[] | string
+  ): Promise<{ code: number; data: any; message: string }> {
+    if (!fileName.toLowerCase().endsWith('.json')) {
+      throw new Error('只支持JSON文件(.json)');
+    }
+
+    const selectedProjectCodes = Array.isArray(projectCodeInput)
+      ? projectCodeInput.map((c) => String(c).trim()).filter(Boolean)
+      : String(projectCodeInput || '')
+          .split(',')
+          .map((c: string) => c.trim())
+          .filter(Boolean);
+
+    if (selectedProjectCodes.length === 0) {
+      throw new Error('请选择要打的所属项目标签');
+    }
+
+    let payload: any;
+    try {
+      const content = fileBuffer.toString('utf-8');
+      payload = JSON.parse(content);
+    } catch (error) {
+      throw new Error('JSON文件解析失败，请检查格式');
+    }
+
+    // 兼容两种格式：
+    // 1) { "ccfe-000000001": "xxx" }（推荐）
+    // 2) [{ id: "ccfe-000000001" }] 或 { data: [...] }
+    let idList: string[] = [];
+    if (payload && typeof payload === 'object' && !Array.isArray(payload) && !Array.isArray(payload?.data)) {
+      idList = Object.keys(payload).map((k) => k.trim()).filter(Boolean);
+    } else {
+      const rawItems = Array.isArray(payload) ? payload : Array.isArray(payload?.data) ? payload.data : [];
+      idList = rawItems.map((row: any) => String(row?.id || row?.translationId || '').trim()).filter(Boolean);
+    }
+
+    if (!Array.isArray(idList) || idList.length === 0) {
+      throw new Error('JSON内容为空，或格式不正确（应包含翻译项ID）');
+    }
+
+    const results = {
+      total: 0,
+      success: 0,
+      errors: [] as Array<{ row: number; message: string }>,
+      successItems: [] as Array<{
+        id: string;
+        source: string;
+        "en-US": string;
+        "zh-HK": string;
+        projectCode: string[];
+      }>,
+    };
+
+    for (let i = 0; i < idList.length; i++) {
+      const translationId = idList[i];
+      results.total++;
+      if (!translationId) {
+        results.errors.push({
+          row: i + 1,
+          message: '翻译项ID不能为空',
+        });
+        continue;
+      }
+
+      try {
+        const updatedTranslation = await Translation.findOneAndUpdate(
+          { id: translationId },
+          { projectCode: selectedProjectCodes },
+          { new: true, runValidators: true }
+        );
+
+        if (!updatedTranslation) {
+          results.errors.push({
+            row: i + 1,
+            message: `翻译项ID "${translationId}" 不存在`,
+          });
+          continue;
+        }
+
+        results.success++;
+        results.successItems.push({
+          id: updatedTranslation.id,
+          source: updatedTranslation.source,
+          "en-US": updatedTranslation.target["en-US"] || "",
+          "zh-HK": updatedTranslation.target["zh-HK"] || "",
+          projectCode: Array.isArray(updatedTranslation.projectCode)
+            ? updatedTranslation.projectCode
+            : [],
+        });
+      } catch (error) {
+        results.errors.push({
+          row: i + 1,
+          message: error instanceof Error ? error.message : '未知错误',
+        });
+      }
+    }
+
+    return {
+      code: 200,
+      data: results,
+      message: `批量打标签 ${results.total} 条数据，成功 ${results.success} 条，失败 ${results.errors.length} 条`,
+    };
+  }
 }
 
 export default new TranslationService();
