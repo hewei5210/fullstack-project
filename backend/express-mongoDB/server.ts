@@ -8,6 +8,7 @@ import authRoutes from "./src/routes/auth";
 import userRoutes from "./src/routes/users";
 import translationRoutes from "./src/routes/translations";
 import csvSyncRoutes from "./src/routes/csvSync";
+import operationLogRoutes from "./src/routes/operationLogs";
 
 // 加载环境变量
 dotenv.config();
@@ -51,6 +52,7 @@ app.use("/api", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api", translationRoutes);
 app.use("/api/csv-sync", csvSyncRoutes);
+app.use("/api/operation-logs", operationLogRoutes);
 
 // 错误处理中间件
 app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {

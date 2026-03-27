@@ -557,7 +557,14 @@ class TranslationService {
     const results = {
       total: 0,
       success: 0,
-      errors: [] as Array<{ row: number; message: string }>
+      errors: [] as Array<{ row: number; message: string }>,
+      successItems: [] as Array<{
+        id: string;
+        source: string;
+        "en-US": string;
+        "zh-HK": string;
+        projectCode: string[];
+      }>
     };
 
     // 获取所有现有翻译项的ID用于验证
@@ -621,6 +628,15 @@ class TranslationService {
         }
 
         results.success++;
+        results.successItems.push({
+          id: updatedTranslation.id,
+          source: updatedTranslation.source,
+          "en-US": updatedTranslation.target["en-US"] || "",
+          "zh-HK": updatedTranslation.target["zh-HK"] || "",
+          projectCode: Array.isArray(updatedTranslation.projectCode)
+            ? updatedTranslation.projectCode
+            : [],
+        });
       } catch (error) {
         results.errors.push({
           row: i + 2,
@@ -865,7 +881,14 @@ class TranslationService {
     const results = {
       total: 0,
       success: 0,
-      errors: [] as Array<{ row: number; message: string }>
+      errors: [] as Array<{ row: number; message: string }>,
+      successItems: [] as Array<{
+        id: string;
+        source: string;
+        "en-US": string;
+        "zh-HK": string;
+        projectCode: string[];
+      }>
     };
 
     // 获取所有现有翻译项的ID用于验证
@@ -904,6 +927,15 @@ class TranslationService {
         }
 
         results.success++;
+        results.successItems.push({
+          id: deletedTranslation.id,
+          source: deletedTranslation.source,
+          "en-US": deletedTranslation.target["en-US"] || "",
+          "zh-HK": deletedTranslation.target["zh-HK"] || "",
+          projectCode: Array.isArray(deletedTranslation.projectCode)
+            ? deletedTranslation.projectCode
+            : [],
+        });
       } catch (error) {
         results.errors.push({
           row: i + 2,

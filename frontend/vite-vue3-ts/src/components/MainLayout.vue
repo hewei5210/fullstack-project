@@ -83,6 +83,12 @@
                 <span>翻译项自动化</span>
               </el-menu-item>
             </el-sub-menu>
+
+            <!-- 操作日志 -->
+            <el-menu-item index="/console/operation-log">
+              <el-icon><Clock /></el-icon>
+              <span>操作日志</span>
+            </el-menu-item>
   
             <!-- 用户管理 -->
             <el-menu-item index="/console/user">

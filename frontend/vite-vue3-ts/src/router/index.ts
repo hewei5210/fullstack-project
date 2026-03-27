@@ -63,6 +63,17 @@ const routes = [
       },
       // 用户管理
       {
+        path: "operation-log",
+        component: () => import("@/views/operation-log/index.vue"),
+        meta: { title: "操作日志" },
+      },
+      {
+        path: "operation-log/:id",
+        component: () => import("@/views/operation-log/detail.vue"),
+        meta: { title: "操作日志详情" },
+      },
+      // 用户管理
+      {
         path: "user",
         component: () => import("@/views/user/index.vue"),
         meta: { title: "用户管理" },

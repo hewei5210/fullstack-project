@@ -3,9 +3,36 @@ import translationService from '../services/translationService';
 import authMiddleware from '../middleware/auth';
 import multer from 'multer';
 import { IAuthenticatedRequest, IApiResponse } from '../types';
+import OperationLog from '../models/OperationLog';
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
+
+const toDetailItem = (item: any) => ({
+  translationId: item?.id || '',
+  source: item?.source || item?.target?.['zh-CN'] || '',
+  enUS: item?.target?.['en-US'] || item?.['en-US'] || '',
+  zhHK: item?.target?.['zh-HK'] || item?.['zh-HK'] || '',
+  projectCode: Array.isArray(item?.projectCode) ? item.projectCode : [],
+});
+
+const writeOperationLog = async (
+  req: IAuthenticatedRequest,
+  operationType: string,
+  detailItems: any[],
+  summary: string
+) => {
+  try {
+    await OperationLog.create({
+      username: req.user?.username || 'unknown',
+      operationType,
+      summary,
+      detailItems,
+    });
+  } catch (error) {
+    console.error('写入操作日志失败:', error);
+  }
+};
 
 // 应用认证中间件
 router.use(authMiddleware);
@@ -74,6 +101,12 @@ router.get('/search', async (req: IAuthenticatedRequest, res: Response) => {
 router.post('/addBing', async (req: IAuthenticatedRequest, res: Response) => {
   try {
     const result = await translationService.add(req.body);
+    await writeOperationLog(
+      req,
+      '新增翻译项',
+      [toDetailItem(result)],
+      `新增 1 条翻译项`
+    );
     const response: IApiResponse = {
       status: 200,
       message: '添加成功',
@@ -94,6 +127,12 @@ router.post('/addBing', async (req: IAuthenticatedRequest, res: Response) => {
 router.put('/updateBing', async (req: IAuthenticatedRequest, res: Response) => {
   try {
     const result = await translationService.update(req.body);
+    await writeOperationLog(
+      req,
+      '编辑翻译项',
+      [toDetailItem(result)],
+      `编辑 1 条翻译项`
+    );
     const response: IApiResponse = {
       status: 200,
       message: '更新成功',
@@ -123,6 +162,12 @@ router.delete('/delBing', async (req: IAuthenticatedRequest, res: Response) => {
     }
     
     const result = await translationService.delete(id as string);
+    await writeOperationLog(
+      req,
+      '删除翻译项',
+      [toDetailItem(result)],
+      `删除 1 条翻译项`
+    );
     return res.status(200).json({
       status: 200,
       message: 'success',
@@ -247,6 +292,15 @@ router.post('/batchUpload', upload.single('file'), async (req: IAuthenticatedReq
     }
 
     const result = await translationService.batchImport(req.file.buffer, req.file.originalname);
+    const successItems = Array.isArray(result?.data?.data)
+      ? result.data.data.map((item: any) => toDetailItem(item))
+      : [];
+    await writeOperationLog(
+      req,
+      '批量新增翻译项',
+      successItems,
+      `批量新增：成功 ${result?.data?.success || 0} 条，失败 ${result?.data?.errors?.length || 0} 条`
+    );
     
     // 根据结果代码返回相应的状态码
     const statusCode = result.code === 200 ? 200 : 400;
@@ -277,6 +331,15 @@ router.post('/batchUpdate', upload.single('file'), async (req: IAuthenticatedReq
     }
 
     const result = await translationService.batchUpdate(req.file.buffer, req.file.originalname);
+    const successItems = Array.isArray(result?.data?.successItems)
+      ? result.data.successItems.map((item: any) => toDetailItem(item))
+      : [];
+    await writeOperationLog(
+      req,
+      '批量编辑翻译项',
+      successItems,
+      `批量编辑：成功 ${result?.data?.success || 0} 条，失败 ${result?.data?.errors?.length || 0} 条`
+    );
     return res.status(200).json({
       status: 200,
       message: result.message,
@@ -410,6 +473,15 @@ router.post('/batchDelete', upload.single('file'), async (req: IAuthenticatedReq
     }
 
     const result = await translationService.batchDelete(req.file.buffer, req.file.originalname);
+    const successItems = Array.isArray(result?.data?.successItems)
+      ? result.data.successItems.map((item: any) => toDetailItem(item))
+      : [];
+    await writeOperationLog(
+      req,
+      '批量删除翻译项',
+      successItems,
+      `批量删除：成功 ${result?.data?.success || 0} 条，失败 ${result?.data?.errors?.length || 0} 条`
+    );
     return res.status(200).json({
       status: 200,
       message: result.message,
