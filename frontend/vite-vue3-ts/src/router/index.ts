@@ -54,11 +54,11 @@ const routes = [
             meta: { title: "翻译项管理" },
           },
           // 翻译项自动化功能暂未开放
-          // {
-          //   path: "translation-auto",
-          //   component: () => import("@/views/i18n/translation-auto/index.vue"),
-          //   meta: { title: "翻译项自动化" },
-          // },
+          {
+            path: "translation-auto",
+            component: () => import("@/views/i18n/translation-auto/index.vue"),
+            meta: { title: "翻译项自动化" },
+          },
         ],
       },
       // 用户管理
@@ -74,11 +74,11 @@ const routes = [
         meta: { title: "AI API管理" },
       },
       // 更新日志
-      {
-        path: "changelog",
-        component: () => import("@/views/changelog/index.vue"),
-        meta: { title: "更新日志" },
-      },
+      // {
+      //   path: "changelog",
+      //   component: () => import("@/views/changelog/index.vue"),
+      //   meta: { title: "更新日志" },
+      // },
     ],
   },
 ];

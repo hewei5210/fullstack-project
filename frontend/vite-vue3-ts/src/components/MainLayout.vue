@@ -97,10 +97,10 @@
             </el-menu-item>
   
             <!-- 更新日志 -->
-            <el-menu-item index="/console/changelog">
+            <!-- <el-menu-item index="/console/changelog">
               <el-icon><Clock /></el-icon>
               <span>更新日志</span>
-            </el-menu-item>
+            </el-menu-item> -->
           </el-menu>
         </el-aside>
         <el-main>
