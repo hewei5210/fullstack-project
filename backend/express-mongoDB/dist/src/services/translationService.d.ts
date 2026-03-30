@@ -1,19 +1,22 @@
 import ExcelJS from 'exceljs';
-import { IPaginationQuery, IPaginationResponse, ISearchQuery, ICreateTranslation, IUpdateTranslation, ITranslation } from '../types';
+import { IPaginationQuery, IPaginationResponse, ISearchQuery, ICreateTranslation, IUpdateTranslation, ITranslation, IProjectTag } from '../types';
 declare class TranslationService {
+    getProjectTags(): Promise<IProjectTag[]>;
+    private buildProjectFilter;
+    private normalizeProjectCodes;
     getList(query?: IPaginationQuery): Promise<IPaginationResponse<ITranslation>>;
     search(searchParams: ISearchQuery): Promise<IPaginationResponse<ITranslation>>;
     add(translationData: ICreateTranslation): Promise<ITranslation>;
     update(translationData: IUpdateTranslation): Promise<ITranslation>;
     delete(id: string): Promise<ITranslation>;
     generateNewId(): Promise<string>;
-    exportJsonData(langType?: 'zh-CN' | 'en-US' | 'zh-HK'): Promise<{
+    exportJsonData(langType?: 'zh-CN' | 'en-US' | 'zh-HK', projectCodes?: string[]): Promise<{
         filePath: string;
         fileName: string;
         done: () => void;
     }>;
     downloadTemplate(): ExcelJS.Workbook;
-    exportExcelData(includeId?: boolean): Promise<ExcelJS.Workbook>;
+    exportExcelData(includeId?: boolean, includeProject?: boolean, projectCodes?: string[]): Promise<ExcelJS.Workbook>;
     batchImport(fileBuffer: Buffer, fileName?: string): Promise<{
         code: number;
         data: any;
@@ -34,6 +37,11 @@ declare class TranslationService {
     exportGetIdsResult(data: any[]): Promise<ExcelJS.Workbook>;
     downloadDeleteTemplate(): ExcelJS.Workbook;
     batchDelete(fileBuffer: Buffer, fileName?: string): Promise<{
+        code: number;
+        data: any;
+        message: string;
+    }>;
+    batchTagByJson(fileBuffer: Buffer, fileName?: string, projectCodeInput?: string[] | string): Promise<{
         code: number;
         data: any;
         message: string;

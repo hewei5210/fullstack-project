@@ -61,16 +61,24 @@ const routes = [
           },
         ],
       },
-      // 用户管理
       {
         path: "operation-log",
-        component: () => import("@/views/operation-log/index.vue"),
-        meta: { title: "操作日志" },
-      },
-      {
-        path: "operation-log/:id",
-        component: () => import("@/views/operation-log/detail.vue"),
-        meta: { title: "操作日志详情" },
+        component: () => import("@/views/operationLog/layout.vue"),
+        meta: { title: "操作日志", breadcrumbTo: { name: "OperationLogList" } },
+        children: [
+          {
+            path: "",
+            name: "OperationLogList",
+            component: () => import("@/views/operationLog/index.vue"),
+            meta: { title: "操作日志", breadcrumb: false },
+          },
+          {
+            path: ":id",
+            name: "OperationLogDetail",
+            component: () => import("@/views/operationLog/detail.vue"),
+            meta: { title: "详情" },
+          },
+        ],
       },
       // 用户管理
       {

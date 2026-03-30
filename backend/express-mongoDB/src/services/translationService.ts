@@ -560,6 +560,10 @@ class TranslationService {
       errors: [] as Array<{ row: number; message: string }>,
       successItems: [] as Array<{
         id: string;
+        prevSource: string;
+        prevEnUS: string;
+        prevZhHK: string;
+        prevProjectCode: string[];
         source: string;
         "en-US": string;
         "zh-HK": string;
@@ -617,6 +621,7 @@ class TranslationService {
           throw new Error('翻译项内容不能为空');
         }
 
+        const oldDoc = await Translation.findOne({ id: translationId });
         const updatedTranslation = await Translation.findOneAndUpdate(
           { id: translationId },
           updateData,
@@ -630,6 +635,10 @@ class TranslationService {
         results.success++;
         results.successItems.push({
           id: updatedTranslation.id,
+          prevSource: oldDoc?.source || '',
+          prevEnUS: oldDoc?.target?.['en-US'] || '',
+          prevZhHK: oldDoc?.target?.['zh-HK'] || '',
+          prevProjectCode: Array.isArray(oldDoc?.projectCode) ? oldDoc.projectCode : [],
           source: updatedTranslation.source,
           "en-US": updatedTranslation.target["en-US"] || "",
           "zh-HK": updatedTranslation.target["zh-HK"] || "",
@@ -884,6 +893,10 @@ class TranslationService {
       errors: [] as Array<{ row: number; message: string }>,
       successItems: [] as Array<{
         id: string;
+        prevSource: string;
+        prevEnUS: string;
+        prevZhHK: string;
+        prevProjectCode: string[];
         source: string;
         "en-US": string;
         "zh-HK": string;
@@ -929,6 +942,10 @@ class TranslationService {
         results.success++;
         results.successItems.push({
           id: deletedTranslation.id,
+          prevSource: '',
+          prevEnUS: '',
+          prevZhHK: '',
+          prevProjectCode: [],
           source: deletedTranslation.source,
           "en-US": deletedTranslation.target["en-US"] || "",
           "zh-HK": deletedTranslation.target["zh-HK"] || "",
@@ -1001,6 +1018,10 @@ class TranslationService {
       errors: [] as Array<{ row: number; message: string }>,
       successItems: [] as Array<{
         id: string;
+        prevSource: string;
+        prevEnUS: string;
+        prevZhHK: string;
+        prevProjectCode: string[];
         source: string;
         "en-US": string;
         "zh-HK": string;
@@ -1020,6 +1041,15 @@ class TranslationService {
       }
 
       try {
+        const oldDoc = await Translation.findOne({ id: translationId });
+        if (!oldDoc) {
+          results.errors.push({
+            row: i + 1,
+            message: `翻译项ID "${translationId}" 不存在`,
+          });
+          continue;
+        }
+
         const updatedTranslation = await Translation.findOneAndUpdate(
           { id: translationId },
           { projectCode: selectedProjectCodes },
@@ -1037,6 +1067,10 @@ class TranslationService {
         results.success++;
         results.successItems.push({
           id: updatedTranslation.id,
+          prevSource: oldDoc.source || '',
+          prevEnUS: oldDoc.target?.['en-US'] || '',
+          prevZhHK: oldDoc.target?.['zh-HK'] || '',
+          prevProjectCode: Array.isArray(oldDoc.projectCode) ? oldDoc.projectCode : [],
           source: updatedTranslation.source,
           "en-US": updatedTranslation.target["en-US"] || "",
           "zh-HK": updatedTranslation.target["zh-HK"] || "",

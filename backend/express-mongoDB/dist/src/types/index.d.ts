@@ -19,9 +19,14 @@ export interface ITranslation extends Document {
         'en-US': string;
         'zh-HK': string;
     };
+    projectCode?: string[];
     status: string;
     createdAt?: Date;
     updatedAt?: Date;
+}
+export interface IProjectTag {
+    label: string;
+    projectCode: string;
 }
 export interface ILoginRequest {
     username: string;
@@ -68,6 +73,7 @@ export interface IPaginationQuery {
     page?: number;
     pageSize?: number;
     sort?: string;
+    projectCodes?: string[];
 }
 export interface IPaginationResponse<T> {
     data: T[];
@@ -80,14 +86,16 @@ export interface ISearchQuery extends IPaginationQuery {
     searchSelect?: string;
     searchContent?: string;
     exactMatch?: boolean;
+    projectCodes?: string[];
 }
 export interface ICreateTranslation {
-    id: string;
+    id?: string;
     target: {
         'zh-CN': string;
         'en-US': string;
         'zh-HK': string;
     };
+    projectCode?: string[];
 }
 export interface IUpdateTranslation {
     id: string;
@@ -97,6 +105,7 @@ export interface IUpdateTranslation {
         'en-US': string;
         'zh-HK': string;
     };
+    projectCode?: string[];
 }
 export interface IBatchCreateTranslations {
     translations: ICreateTranslation[];
@@ -109,6 +118,7 @@ export interface IBatchDeleteTranslations {
 }
 export interface IExportQuery {
     langType: 'zh-CN' | 'en-US' | 'zh-HK';
+    projectCodes?: string[];
 }
 export interface ICSVSyncRequest {
     action: 'import' | 'export' | 'stats' | 'clean';

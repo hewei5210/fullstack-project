@@ -1,4 +1,5 @@
 import express, { Response } from "express";
+import mongoose from "mongoose";
 import authMiddleware from "../middleware/auth";
 import OperationLog from "../models/OperationLog";
 import { IAuthenticatedRequest, IApiResponse } from "../types";
@@ -7,12 +8,13 @@ const router = express.Router();
 
 router.use(authMiddleware);
 
-// 操作日志列表（支持用户、操作类型、时间范围筛选）
+// 操作日志列表（支持日志ID、用户、操作类型、时间范围筛选）
 router.get("/", async (req: IAuthenticatedRequest, res: Response) => {
   try {
     const {
       page = "1",
       pageSize = "10",
+      logId,
       username,
       operationType,
       startTime,
@@ -23,6 +25,24 @@ router.get("/", async (req: IAuthenticatedRequest, res: Response) => {
     const size = Math.max(1, parseInt(pageSize as string, 10) || 10);
 
     const query: Record<string, any> = {};
+    if (logId && String(logId).trim()) {
+      const idStr = String(logId).trim();
+      if (!mongoose.Types.ObjectId.isValid(idStr)) {
+        const response: IApiResponse = {
+          status: 200,
+          message: "success",
+          data: {
+            data: [],
+            total: 0,
+            page: currentPage,
+            pageSize: size,
+            totalPages: 0,
+          },
+        };
+        return res.status(200).json(response);
+      }
+      query._id = new mongoose.Types.ObjectId(idStr);
+    }
     if (username && String(username).trim()) {
       query.username = String(username).trim();
     }

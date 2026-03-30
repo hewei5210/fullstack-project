@@ -1,7 +1,14 @@
 <template>
   <el-breadcrumb class="app-breadcrumb" separator=">">
     <el-breadcrumb-item v-for="(item, index) in levelList" :key="index">
-      <span class="no-redirect">
+      <router-link
+        v-if="breadcrumbLinkTarget(item, index)"
+        :to="breadcrumbLinkTarget(item, index)!"
+        class="breadcrumb-link"
+      >
+        {{ item.meta?.title || item.name }}
+      </router-link>
+      <span v-else class="no-redirect">
         {{ item.meta?.title || item.name }}
       </span>
     </el-breadcrumb-item>
@@ -11,11 +18,20 @@
 <script setup lang="ts">
 import { ref, watch } from "vue";
 import { useRoute } from "vue-router";
-import type { RouteLocationMatched } from "vue-router";
+import type { RouteLocationMatched, RouteLocationRaw } from "vue-router";
 
 const route = useRoute();
 
 const levelList = ref<RouteLocationMatched[]>([]);
+
+/** 路由 meta.breadcrumbTo：非末级面包屑跳转（按需配置，避免链到无默认页的父级） */
+function breadcrumbLinkTarget(
+  item: RouteLocationMatched,
+  index: number
+): RouteLocationRaw | undefined {
+  if (index >= levelList.value.length - 1) return undefined;
+  return item.meta?.breadcrumbTo as RouteLocationRaw | undefined;
+}
 
 // 生成面包屑数据
 const getBreadcrumb = () => {
@@ -41,6 +57,10 @@ const getBreadcrumb = () => {
       }
       // 二级菜单：/console/i18n/xxx
       if (pathSegments.length === 3 && pathSegments[1] === "i18n") {
+        return true;
+      }
+      // 操作日志详情：/console/operation-log/:id
+      if (pathSegments.length === 3 && pathSegments[1] === "operation-log") {
         return true;
       }
     }
@@ -76,6 +96,17 @@ watch(
     .el-breadcrumb__inner {
       color: #64748b;
       font-weight: 500;
+    }
+  }
+
+  .breadcrumb-link {
+    color: #475569;
+    cursor: pointer;
+    font-weight: 600;
+    text-decoration: none;
+
+    &:hover {
+      color: #334155;
     }
   }
 

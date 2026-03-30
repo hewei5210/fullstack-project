@@ -34,43 +34,39 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 const mongoose_1 = __importStar(require("mongoose"));
-const TranslationSchema = new mongoose_1.Schema({
-    id: {
+const OperationLogItemSchema = new mongoose_1.Schema({
+    translationId: { type: String, default: "" },
+    prevSource: { type: String, default: "" },
+    prevEnUS: { type: String, default: "" },
+    prevZhHK: { type: String, default: "" },
+    prevProjectCode: { type: [String], default: [] },
+    source: { type: String, default: "" },
+    enUS: { type: String, default: "" },
+    zhHK: { type: String, default: "" },
+    projectCode: { type: [String], default: [] },
+}, { _id: false });
+const OperationLogSchema = new mongoose_1.Schema({
+    username: {
         type: String,
         required: true,
-        unique: true,
-        index: true
+        index: true,
     },
-    source: {
+    operationType: {
         type: String,
-        required: true
+        required: true,
+        index: true,
     },
-    target: {
-        'zh-CN': { type: String, required: true },
-        'zh-HK': { type: String, required: true },
-        'en-US': { type: String, required: true }
-    },
-    projectCode: {
-        type: [String],
-        default: []
-    },
-    status: {
+    summary: {
         type: String,
-        enum: ['ready', 'pending', 'error'],
-        default: 'ready'
+        default: "",
     },
-    createdAt: {
-        type: Date,
-        default: Date.now
+    detailItems: {
+        type: [OperationLogItemSchema],
+        default: [],
     },
-    updatedAt: {
-        type: Date,
-        default: Date.now
-    }
+}, {
+    timestamps: true,
 });
-TranslationSchema.pre('save', function (next) {
-    this.updatedAt = new Date();
-    next();
-});
-exports.default = mongoose_1.default.model('Translation', TranslationSchema);
-//# sourceMappingURL=Translation.js.map
+OperationLogSchema.index({ createdAt: -1 });
+exports.default = mongoose_1.default.model("OperationLog", OperationLogSchema);
+//# sourceMappingURL=OperationLog.js.map

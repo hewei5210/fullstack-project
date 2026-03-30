@@ -7,9 +7,58 @@ const express_1 = __importDefault(require("express"));
 const translationService_1 = __importDefault(require("../services/translationService"));
 const auth_1 = __importDefault(require("../middleware/auth"));
 const multer_1 = __importDefault(require("multer"));
+const OperationLog_1 = __importDefault(require("../models/OperationLog"));
+const Translation_1 = __importDefault(require("../models/Translation"));
 const router = express_1.default.Router();
 const upload = (0, multer_1.default)({ storage: multer_1.default.memoryStorage() });
+const toDetailItem = (item) => ({
+    translationId: item?.id || item?.translationId || '',
+    source: item?.source || item?.target?.['zh-CN'] || '',
+    enUS: item?.['en-US'] !== undefined && item?.['en-US'] !== null
+        ? item['en-US']
+        : item?.target?.['en-US'] || '',
+    zhHK: item?.['zh-HK'] !== undefined && item?.['zh-HK'] !== null
+        ? item['zh-HK']
+        : item?.target?.['zh-HK'] || '',
+    prevSource: item?.prevSource ?? '',
+    prevEnUS: item?.prevEnUS ?? '',
+    prevZhHK: item?.prevZhHK ?? '',
+    prevProjectCode: Array.isArray(item?.prevProjectCode) ? item.prevProjectCode : [],
+    projectCode: Array.isArray(item?.projectCode) ? item.projectCode : [],
+});
+const writeOperationLog = async (req, operationType, detailItems, summary) => {
+    try {
+        await OperationLog_1.default.create({
+            username: req.user?.username || 'unknown',
+            operationType,
+            summary,
+            detailItems,
+        });
+    }
+    catch (error) {
+        console.error('写入操作日志失败:', error);
+    }
+};
 router.use(auth_1.default);
+router.get('/projectTags', async (_req, res) => {
+    try {
+        const list = await translationService_1.default.getProjectTags();
+        const response = {
+            status: 200,
+            message: 'success',
+            data: list
+        };
+        return res.status(200).json(response);
+    }
+    catch (error) {
+        const response = {
+            status: 400,
+            message: error instanceof Error ? error.message : '获取失败',
+            data: ''
+        };
+        return res.status(400).json(response);
+    }
+});
 router.get('/getBingList', async (req, res) => {
     try {
         const result = await translationService_1.default.getList(req.query);
@@ -51,6 +100,7 @@ router.get('/search', async (req, res) => {
 router.post('/addBing', async (req, res) => {
     try {
         const result = await translationService_1.default.add(req.body);
+        await writeOperationLog(req, '新增翻译项', [toDetailItem(result)], `新增 1 条翻译项`);
         const response = {
             status: 200,
             message: '添加成功',
@@ -69,7 +119,17 @@ router.post('/addBing', async (req, res) => {
 });
 router.put('/updateBing', async (req, res) => {
     try {
+        const editId = req.body?.id;
+        const beforeDoc = editId ? await Translation_1.default.findOne({ id: editId }) : null;
         const result = await translationService_1.default.update(req.body);
+        const detailItem = {
+            ...toDetailItem(result),
+            prevSource: beforeDoc?.source || '',
+            prevEnUS: beforeDoc?.target?.['en-US'] || '',
+            prevZhHK: beforeDoc?.target?.['zh-HK'] || '',
+            prevProjectCode: Array.isArray(beforeDoc?.projectCode) ? beforeDoc.projectCode : [],
+        };
+        await writeOperationLog(req, '编辑翻译项', [detailItem], `编辑 1 条翻译项`);
         const response = {
             status: 200,
             message: '更新成功',
@@ -97,6 +157,7 @@ router.delete('/delBing', async (req, res) => {
             });
         }
         const result = await translationService_1.default.delete(id);
+        await writeOperationLog(req, '删除翻译项', [toDetailItem(result)], `删除 1 条翻译项`);
         return res.status(200).json({
             status: 200,
             message: 'success',
@@ -113,8 +174,11 @@ router.delete('/delBing', async (req, res) => {
 });
 router.get('/exportBing', async (req, res) => {
     try {
-        const { langType = 'zh-CN' } = req.query;
-        const fileInfo = await translationService_1.default.exportJsonData(langType);
+        const { langType = 'zh-CN', projectCodes } = req.query;
+        const codes = typeof projectCodes === 'string' && projectCodes
+            ? projectCodes.split(',').map((s) => s.trim()).filter(Boolean)
+            : undefined;
+        const fileInfo = await translationService_1.default.exportJsonData(langType, codes);
         const fs = require('fs');
         if (!fs.existsSync(fileInfo.filePath)) {
             throw new Error('导出文件不存在');
@@ -146,8 +210,11 @@ router.get('/exportBing', async (req, res) => {
 });
 router.get('/exportExcel', async (req, res) => {
     try {
-        const { includeId = false } = req.query;
-        const workbook = await translationService_1.default.exportExcelData(includeId === 'true');
+        const { includeId = false, includeProject = false, projectCodes } = req.query;
+        const codes = typeof projectCodes === 'string' && projectCodes
+            ? projectCodes.split(',').map((s) => s.trim()).filter(Boolean)
+            : undefined;
+        const workbook = await translationService_1.default.exportExcelData(includeId === 'true', includeProject === 'true', codes);
         res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
         res.setHeader('Content-Disposition', 'attachment; filename=translation_data.xlsx');
         await workbook.xlsx.write(res);
@@ -187,6 +254,10 @@ router.post('/batchUpload', upload.single('file'), async (req, res) => {
             });
         }
         const result = await translationService_1.default.batchImport(req.file.buffer, req.file.originalname);
+        const successItems = Array.isArray(result?.data?.data)
+            ? result.data.data.map((item) => toDetailItem(item))
+            : [];
+        await writeOperationLog(req, '批量新增翻译项', successItems, `批量新增：成功 ${result?.data?.success || 0} 条，失败 ${result?.data?.errors?.length || 0} 条`);
         const statusCode = result.code === 200 ? 200 : 400;
         return res.status(statusCode).json({
             status: result.code,
@@ -212,6 +283,10 @@ router.post('/batchUpdate', upload.single('file'), async (req, res) => {
             });
         }
         const result = await translationService_1.default.batchUpdate(req.file.buffer, req.file.originalname);
+        const successItems = Array.isArray(result?.data?.successItems)
+            ? result.data.successItems.map((item) => toDetailItem(item))
+            : [];
+        await writeOperationLog(req, '批量编辑翻译项', successItems, `批量编辑：成功 ${result?.data?.success || 0} 条，失败 ${result?.data?.errors?.length || 0} 条`);
         return res.status(200).json({
             status: 200,
             message: result.message,
@@ -246,6 +321,34 @@ router.post('/batchGetIds', upload.single('file'), async (req, res) => {
         return res.status(400).json({
             status: 400,
             message: error instanceof Error ? error.message : '批量获取ID失败',
+            data: ''
+        });
+    }
+});
+router.post('/batchTagByJson', upload.single('file'), async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({
+                status: 400,
+                message: '请上传文件',
+                data: ''
+            });
+        }
+        const result = await translationService_1.default.batchTagByJson(req.file.buffer, req.file.originalname, req.body?.projectCode);
+        const successItems = Array.isArray(result?.data?.successItems)
+            ? result.data.successItems.map((item) => toDetailItem(item))
+            : [];
+        await writeOperationLog(req, '批量编辑翻译项', successItems, `批量打标签：成功 ${result?.data?.success || 0} 条，失败 ${result?.data?.errors?.length || 0} 条`);
+        return res.status(200).json({
+            status: 200,
+            message: result.message,
+            data: result.data
+        });
+    }
+    catch (error) {
+        return res.status(400).json({
+            status: 400,
+            message: error instanceof Error ? error.message : '批量打标签失败',
             data: ''
         });
     }
@@ -326,6 +429,10 @@ router.post('/batchDelete', upload.single('file'), async (req, res) => {
             });
         }
         const result = await translationService_1.default.batchDelete(req.file.buffer, req.file.originalname);
+        const successItems = Array.isArray(result?.data?.successItems)
+            ? result.data.successItems.map((item) => toDetailItem(item))
+            : [];
+        await writeOperationLog(req, '批量删除翻译项', successItems, `批量删除：成功 ${result?.data?.success || 0} 条，失败 ${result?.data?.errors?.length || 0} 条`);
         return res.status(200).json({
             status: 200,
             message: result.message,

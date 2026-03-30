@@ -4,15 +4,26 @@ import authMiddleware from '../middleware/auth';
 import multer from 'multer';
 import { IAuthenticatedRequest, IApiResponse } from '../types';
 import OperationLog from '../models/OperationLog';
+import Translation from '../models/Translation';
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
 
 const toDetailItem = (item: any) => ({
-  translationId: item?.id || '',
+  translationId: item?.id || item?.translationId || '',
   source: item?.source || item?.target?.['zh-CN'] || '',
-  enUS: item?.target?.['en-US'] || item?.['en-US'] || '',
-  zhHK: item?.target?.['zh-HK'] || item?.['zh-HK'] || '',
+  enUS:
+    item?.['en-US'] !== undefined && item?.['en-US'] !== null
+      ? item['en-US']
+      : item?.target?.['en-US'] || '',
+  zhHK:
+    item?.['zh-HK'] !== undefined && item?.['zh-HK'] !== null
+      ? item['zh-HK']
+      : item?.target?.['zh-HK'] || '',
+  prevSource: item?.prevSource ?? '',
+  prevEnUS: item?.prevEnUS ?? '',
+  prevZhHK: item?.prevZhHK ?? '',
+  prevProjectCode: Array.isArray(item?.prevProjectCode) ? item.prevProjectCode : [],
   projectCode: Array.isArray(item?.projectCode) ? item.projectCode : [],
 });
 
@@ -126,11 +137,20 @@ router.post('/addBing', async (req: IAuthenticatedRequest, res: Response) => {
 // 更新翻译项
 router.put('/updateBing', async (req: IAuthenticatedRequest, res: Response) => {
   try {
+    const editId = req.body?.id as string | undefined;
+    const beforeDoc = editId ? await Translation.findOne({ id: editId }) : null;
     const result = await translationService.update(req.body);
+    const detailItem = {
+      ...toDetailItem(result),
+      prevSource: beforeDoc?.source || '',
+      prevEnUS: beforeDoc?.target?.['en-US'] || '',
+      prevZhHK: beforeDoc?.target?.['zh-HK'] || '',
+      prevProjectCode: Array.isArray(beforeDoc?.projectCode) ? beforeDoc.projectCode : [],
+    };
     await writeOperationLog(
       req,
       '编辑翻译项',
-      [toDetailItem(result)],
+      [detailItem],
       `编辑 1 条翻译项`
     );
     const response: IApiResponse = {

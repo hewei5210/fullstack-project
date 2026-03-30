@@ -11,6 +11,7 @@ const auth_1 = __importDefault(require("./src/routes/auth"));
 const users_1 = __importDefault(require("./src/routes/users"));
 const translations_1 = __importDefault(require("./src/routes/translations"));
 const csvSync_1 = __importDefault(require("./src/routes/csvSync"));
+const operationLogs_1 = __importDefault(require("./src/routes/operationLogs"));
 dotenv_1.default.config();
 const app = (0, express_1.default)();
 (0, database_1.default)();
@@ -38,6 +39,7 @@ app.use("/api", auth_1.default);
 app.use("/api/users", users_1.default);
 app.use("/api", translations_1.default);
 app.use("/api/csv-sync", csvSync_1.default);
+app.use("/api/operation-logs", operationLogs_1.default);
 app.use((err, req, res, next) => {
     console.error(err.stack);
     res.status(500).json({

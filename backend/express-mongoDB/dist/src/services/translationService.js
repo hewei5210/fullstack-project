@@ -7,15 +7,49 @@ const Translation_1 = __importDefault(require("../models/Translation"));
 const exceljs_1 = __importDefault(require("exceljs"));
 const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
+const PROJECT_TAGS = [
+    { label: '订购页', projectCode: 'cloud_computer_client' },
+    { label: '控制台', projectCode: 'computer_entconsole_client' },
+    { label: '企业门户', projectCode: 'ccemp-web' },
+    { label: '云管', projectCode: 'cda_cem_client' },
+    { label: '工作台', projectCode: 'cem-quality-protal' },
+    { label: '二级管', projectCode: 'cutt_rpmp_porta' },
+];
 class TranslationService {
+    async getProjectTags() {
+        return PROJECT_TAGS;
+    }
+    buildProjectFilter(projectCodes) {
+        if (!projectCodes || projectCodes.length === 0)
+            return {};
+        return {
+            $or: [
+                { projectCode: { $in: projectCodes } },
+                { projectCode: { $exists: false } },
+                { projectCode: [] },
+                { projectCode: { $size: 0 } }
+            ]
+        };
+    }
+    normalizeProjectCodes(projectCodes) {
+        if (projectCodes == null || projectCodes === '')
+            return undefined;
+        if (Array.isArray(projectCodes))
+            return projectCodes.length ? projectCodes : undefined;
+        const s = String(projectCodes).trim();
+        if (!s)
+            return undefined;
+        return s.split(',').map((c) => c.trim()).filter(Boolean);
+    }
     async getList(query = {}) {
-        const { page = 1, pageSize = 10, sort = 'id' } = query;
+        const { page = 1, pageSize = 10, sort = 'id', projectCodes } = query;
         const skip = (page - 1) * pageSize;
-        const translations = await Translation_1.default.find()
+        const filter = this.buildProjectFilter(this.normalizeProjectCodes(projectCodes));
+        const translations = await Translation_1.default.find(filter)
             .sort(sort)
             .skip(skip)
             .limit(parseInt(pageSize.toString()));
-        const total = await Translation_1.default.countDocuments();
+        const total = await Translation_1.default.countDocuments(filter);
         return {
             data: translations,
             total,
@@ -35,37 +69,41 @@ class TranslationService {
                 exactMatch = searchParams.exactMatch;
             }
         }
-        let query = {};
+        const projectFilter = this.buildProjectFilter(this.normalizeProjectCodes(searchParams.projectCodes));
+        let contentQuery = {};
         if (searchContent) {
             if (exactMatch) {
                 if (searchSelect === 'id') {
-                    query.id = searchContent;
+                    contentQuery.id = searchContent;
                 }
                 else if (searchSelect === 'zh-CN') {
-                    query.source = searchContent;
+                    contentQuery.source = searchContent;
                 }
                 else if (searchSelect === 'en-US') {
-                    query['target.en-US'] = searchContent;
+                    contentQuery['target.en-US'] = searchContent;
                 }
                 else if (searchSelect === 'zh-HK') {
-                    query['target.zh-HK'] = searchContent;
+                    contentQuery['target.zh-HK'] = searchContent;
                 }
             }
             else {
                 if (searchSelect === 'id') {
-                    query.id = { $regex: searchContent, $options: 'i' };
+                    contentQuery.id = { $regex: searchContent, $options: 'i' };
                 }
                 else if (searchSelect === 'zh-CN') {
-                    query.source = { $regex: searchContent, $options: 'i' };
+                    contentQuery.source = { $regex: searchContent, $options: 'i' };
                 }
                 else if (searchSelect === 'en-US') {
-                    query['target.en-US'] = { $regex: searchContent, $options: 'i' };
+                    contentQuery['target.en-US'] = { $regex: searchContent, $options: 'i' };
                 }
                 else if (searchSelect === 'zh-HK') {
-                    query['target.zh-HK'] = { $regex: searchContent, $options: 'i' };
+                    contentQuery['target.zh-HK'] = { $regex: searchContent, $options: 'i' };
                 }
             }
         }
+        const query = Object.keys(projectFilter).length > 0
+            ? (Object.keys(contentQuery).length > 0 ? { $and: [projectFilter, contentQuery] } : projectFilter)
+            : (Object.keys(contentQuery).length > 0 ? contentQuery : {});
         const skip = (page - 1) * pageSize;
         const translations = await Translation_1.default.find(query)
             .sort('id')
@@ -81,7 +119,7 @@ class TranslationService {
         };
     }
     async add(translationData) {
-        const { target } = translationData;
+        const { target, projectCode } = translationData;
         const existingTranslation = await Translation_1.default.findOne({ source: target['zh-CN'] });
         if (existingTranslation) {
             throw new Error('翻译项已存在，无法重复添加');
@@ -90,13 +128,18 @@ class TranslationService {
         const translation = new Translation_1.default({
             id,
             source: target['zh-CN'],
-            target
+            target,
+            projectCode: Array.isArray(projectCode) ? projectCode : []
         });
         return await translation.save();
     }
     async update(translationData) {
-        const { id, source, target } = translationData;
-        const translation = await Translation_1.default.findOneAndUpdate({ id }, { source, target }, { new: true, runValidators: true });
+        const { id, source, target, projectCode } = translationData;
+        const updateFields = { source, target };
+        if (projectCode !== undefined) {
+            updateFields.projectCode = Array.isArray(projectCode) ? projectCode : [];
+        }
+        const translation = await Translation_1.default.findOneAndUpdate({ id }, updateFields, { new: true, runValidators: true });
         if (!translation) {
             throw new Error('翻译项不存在');
         }
@@ -127,8 +170,9 @@ class TranslationService {
         }
         return `ccfe-${expectedNumber.toString().padStart(9, '0')}`;
     }
-    async exportJsonData(langType = 'zh-CN') {
-        const translations = await Translation_1.default.find().sort('id');
+    async exportJsonData(langType = 'zh-CN', projectCodes) {
+        const filter = this.buildProjectFilter(this.normalizeProjectCodes(projectCodes));
+        const translations = await Translation_1.default.find(filter).sort('id');
         let jsonData = {};
         if (langType === "zh-CN" || langType === "zh-HK" || langType === "en-US") {
             translations.forEach((item) => {
@@ -166,36 +210,34 @@ class TranslationService {
             { header: "翻译项", key: "zh-CN", width: 30 },
             { header: "翻译项-英文", key: "en-US", width: 30 },
             { header: "翻译项-繁体", key: "zh-HK", width: 30 },
+            { header: "所属项目", key: "projectCode", width: 40 },
         ];
         return workbook;
     }
-    async exportExcelData(includeId = false) {
-        const translations = await Translation_1.default.find().sort('id');
+    async exportExcelData(includeId = false, includeProject = false, projectCodes) {
+        const filter = this.buildProjectFilter(this.normalizeProjectCodes(projectCodes));
+        const translations = await Translation_1.default.find(filter).sort('id');
         const workbook = new exceljs_1.default.Workbook();
         const worksheet = workbook.addWorksheet('翻译数据');
-        if (includeId) {
-            worksheet.columns = [
-                { header: "翻译项ID", key: "id", width: 20 },
-                { header: "翻译项", key: "zh-CN", width: 30 },
-                { header: "翻译项-英文", key: "en-US", width: 30 },
-                { header: "翻译项-繁体", key: "zh-HK", width: 30 },
-            ];
-        }
-        else {
-            worksheet.columns = [
-                { header: "翻译项", key: "zh-CN", width: 30 },
-                { header: "翻译项-英文", key: "en-US", width: 30 },
-                { header: "翻译项-繁体", key: "zh-HK", width: 30 },
-            ];
-        }
+        const cols = [];
+        if (includeId)
+            cols.push({ header: "翻译项ID", key: "id", width: 20 });
+        cols.push({ header: "翻译项", key: "zh-CN", width: 30 }, { header: "翻译项-英文", key: "en-US", width: 30 }, { header: "翻译项-繁体", key: "zh-HK", width: 30 });
+        if (includeProject)
+            cols.push({ header: "所属项目", key: "projectCode", width: 40 });
+        worksheet.columns = cols;
         translations.forEach(translation => {
             const rowData = {
                 'zh-CN': translation.source || '',
                 'en-US': translation.target['en-US'] || '',
                 'zh-HK': translation.target['zh-HK'] || ''
             };
-            if (includeId) {
+            if (includeId)
                 rowData.id = translation.id;
+            if (includeProject) {
+                rowData.projectCode = Array.isArray(translation.projectCode) && translation.projectCode.length > 0
+                    ? translation.projectCode.join(',')
+                    : '';
             }
             worksheet.addRow(rowData);
         });
@@ -282,12 +324,18 @@ class TranslationService {
                 hasDuplicateIssues = true;
                 continue;
             }
+            let projectCode = [];
+            const projectCell = row['所属项目'] || row.projectCode;
+            if (projectCell != null && String(projectCell).trim() !== '') {
+                projectCode = String(projectCell).split(',').map((c) => c.trim()).filter(Boolean);
+            }
             validData.push({
                 rowIndex: i + 2,
                 data: {
                     source: cellValue,
                     'en-US': row['翻译项-英文'] || row['target(en-US)'] || '',
-                    'zh-HK': row['翻译项-繁体'] || row['target(zh-HK)'] || ''
+                    'zh-HK': row['翻译项-繁体'] || row['target(zh-HK)'] || '',
+                    projectCode
                 }
             });
         }
@@ -310,7 +358,8 @@ class TranslationService {
                             'zh-CN': item.data.source,
                             'en-US': item.data['en-US'],
                             'zh-HK': item.data['zh-HK']
-                        }
+                        },
+                        projectCode: item.data.projectCode || []
                     });
                     await translation.save();
                     results.data.push(translation);
@@ -341,6 +390,7 @@ class TranslationService {
             { header: "翻译项", key: "zh-CN", width: 30 },
             { header: "翻译项-英文", key: "en-US", width: 30 },
             { header: "翻译项-繁体", key: "zh-HK", width: 30 },
+            { header: "所属项目", key: "projectCode", width: 40 },
         ];
         return workbook;
     }
@@ -381,7 +431,8 @@ class TranslationService {
         const results = {
             total: 0,
             success: 0,
-            errors: []
+            errors: [],
+            successItems: []
         };
         const existingTranslations = await Translation_1.default.find();
         const existingIds = new Set(existingTranslations.map(item => item.id));
@@ -405,22 +456,42 @@ class TranslationService {
                 continue;
             }
             try {
+                let projectCode = [];
+                const projectCell = row['所属项目'] || row.projectCode;
+                if (projectCell != null && String(projectCell).trim() !== '') {
+                    projectCode = String(projectCell).split(',').map((c) => c.trim()).filter(Boolean);
+                }
                 const updateData = {
                     source: source || '',
                     target: {
                         'zh-CN': source || '',
                         'en-US': row['翻译项-英文'] || row['target(en-US)'] || '',
                         'zh-HK': row['翻译项-繁体'] || row['target(zh-HK)'] || ''
-                    }
+                    },
+                    projectCode
                 };
                 if (!updateData.source) {
                     throw new Error('翻译项内容不能为空');
                 }
+                const oldDoc = await Translation_1.default.findOne({ id: translationId });
                 const updatedTranslation = await Translation_1.default.findOneAndUpdate({ id: translationId }, updateData, { new: true, runValidators: true });
                 if (!updatedTranslation) {
                     throw new Error('更新失败');
                 }
                 results.success++;
+                results.successItems.push({
+                    id: updatedTranslation.id,
+                    prevSource: oldDoc?.source || '',
+                    prevEnUS: oldDoc?.target?.['en-US'] || '',
+                    prevZhHK: oldDoc?.target?.['zh-HK'] || '',
+                    prevProjectCode: Array.isArray(oldDoc?.projectCode) ? oldDoc.projectCode : [],
+                    source: updatedTranslation.source,
+                    "en-US": updatedTranslation.target["en-US"] || "",
+                    "zh-HK": updatedTranslation.target["zh-HK"] || "",
+                    projectCode: Array.isArray(updatedTranslation.projectCode)
+                        ? updatedTranslation.projectCode
+                        : [],
+                });
             }
             catch (error) {
                 results.errors.push({
@@ -605,7 +676,8 @@ class TranslationService {
         const results = {
             total: 0,
             success: 0,
-            errors: []
+            errors: [],
+            successItems: []
         };
         const existingTranslations = await Translation_1.default.find();
         const existingIds = new Set(existingTranslations.map(item => item.id));
@@ -633,6 +705,19 @@ class TranslationService {
                     throw new Error('删除失败');
                 }
                 results.success++;
+                results.successItems.push({
+                    id: deletedTranslation.id,
+                    prevSource: '',
+                    prevEnUS: '',
+                    prevZhHK: '',
+                    prevProjectCode: [],
+                    source: deletedTranslation.source,
+                    "en-US": deletedTranslation.target["en-US"] || "",
+                    "zh-HK": deletedTranslation.target["zh-HK"] || "",
+                    projectCode: Array.isArray(deletedTranslation.projectCode)
+                        ? deletedTranslation.projectCode
+                        : [],
+                });
             }
             catch (error) {
                 results.errors.push({
@@ -645,6 +730,99 @@ class TranslationService {
             code: 200,
             data: results,
             message: `批量删除 ${results.total} 条数据，成功删除 ${results.success} 条数据，失败 ${results.errors.length} 条数据`
+        };
+    }
+    async batchTagByJson(fileBuffer, fileName = '', projectCodeInput) {
+        if (!fileName.toLowerCase().endsWith('.json')) {
+            throw new Error('只支持JSON文件(.json)');
+        }
+        const selectedProjectCodes = Array.isArray(projectCodeInput)
+            ? projectCodeInput.map((c) => String(c).trim()).filter(Boolean)
+            : String(projectCodeInput || '')
+                .split(',')
+                .map((c) => c.trim())
+                .filter(Boolean);
+        if (selectedProjectCodes.length === 0) {
+            throw new Error('请选择要打的所属项目标签');
+        }
+        let payload;
+        try {
+            const content = fileBuffer.toString('utf-8');
+            payload = JSON.parse(content);
+        }
+        catch (error) {
+            throw new Error('JSON文件解析失败，请检查格式');
+        }
+        let idList = [];
+        if (payload && typeof payload === 'object' && !Array.isArray(payload) && !Array.isArray(payload?.data)) {
+            idList = Object.keys(payload).map((k) => k.trim()).filter(Boolean);
+        }
+        else {
+            const rawItems = Array.isArray(payload) ? payload : Array.isArray(payload?.data) ? payload.data : [];
+            idList = rawItems.map((row) => String(row?.id || row?.translationId || '').trim()).filter(Boolean);
+        }
+        if (!Array.isArray(idList) || idList.length === 0) {
+            throw new Error('JSON内容为空，或格式不正确（应包含翻译项ID）');
+        }
+        const results = {
+            total: 0,
+            success: 0,
+            errors: [],
+            successItems: [],
+        };
+        for (let i = 0; i < idList.length; i++) {
+            const translationId = idList[i];
+            results.total++;
+            if (!translationId) {
+                results.errors.push({
+                    row: i + 1,
+                    message: '翻译项ID不能为空',
+                });
+                continue;
+            }
+            try {
+                const oldDoc = await Translation_1.default.findOne({ id: translationId });
+                if (!oldDoc) {
+                    results.errors.push({
+                        row: i + 1,
+                        message: `翻译项ID "${translationId}" 不存在`,
+                    });
+                    continue;
+                }
+                const updatedTranslation = await Translation_1.default.findOneAndUpdate({ id: translationId }, { projectCode: selectedProjectCodes }, { new: true, runValidators: true });
+                if (!updatedTranslation) {
+                    results.errors.push({
+                        row: i + 1,
+                        message: `翻译项ID "${translationId}" 不存在`,
+                    });
+                    continue;
+                }
+                results.success++;
+                results.successItems.push({
+                    id: updatedTranslation.id,
+                    prevSource: oldDoc.source || '',
+                    prevEnUS: oldDoc.target?.['en-US'] || '',
+                    prevZhHK: oldDoc.target?.['zh-HK'] || '',
+                    prevProjectCode: Array.isArray(oldDoc.projectCode) ? oldDoc.projectCode : [],
+                    source: updatedTranslation.source,
+                    "en-US": updatedTranslation.target["en-US"] || "",
+                    "zh-HK": updatedTranslation.target["zh-HK"] || "",
+                    projectCode: Array.isArray(updatedTranslation.projectCode)
+                        ? updatedTranslation.projectCode
+                        : [],
+                });
+            }
+            catch (error) {
+                results.errors.push({
+                    row: i + 1,
+                    message: error instanceof Error ? error.message : '未知错误',
+                });
+            }
+        }
+        return {
+            code: 200,
+            data: results,
+            message: `批量打标签 ${results.total} 条数据，成功 ${results.success} 条，失败 ${results.errors.length} 条`,
         };
     }
 }

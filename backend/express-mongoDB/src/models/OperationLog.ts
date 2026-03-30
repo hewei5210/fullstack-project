@@ -2,6 +2,12 @@ import mongoose, { Schema } from "mongoose";
 
 export interface IOperationLogItem {
   translationId?: string;
+  /** 编辑前（仅编辑类操作有值） */
+  prevSource?: string;
+  prevEnUS?: string;
+  prevZhHK?: string;
+  /** 编辑前所属项目 */
+  prevProjectCode?: string[];
   source?: string;
   enUS?: string;
   zhHK?: string;
@@ -20,6 +26,10 @@ export interface IOperationLog extends mongoose.Document {
 const OperationLogItemSchema = new Schema<IOperationLogItem>(
   {
     translationId: { type: String, default: "" },
+    prevSource: { type: String, default: "" },
+    prevEnUS: { type: String, default: "" },
+    prevZhHK: { type: String, default: "" },
+    prevProjectCode: { type: [String], default: [] },
     source: { type: String, default: "" },
     enUS: { type: String, default: "" },
     zhHK: { type: String, default: "" },
