@@ -519,8 +519,8 @@ onMounted(() => {
   flex-shrink: 0;
 }
 .project-select {
-  width: 220px;
-  min-width: 180px;
+  width: 170px;
+  min-width: 150px;
 }
 
 .search-area {

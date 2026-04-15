@@ -75,6 +75,8 @@
         <el-select
           v-model="localEditItem.projectCode"
           multiple
+          collapse-tags
+          collapse-tags-tooltip
           placeholder="不选则属于所有项目"
           class="edit-item-project-select"
           popper-class="edit-item-project-select-dropdown"
@@ -290,10 +292,9 @@ const handleSubmit = async () => {
   cursor: not-allowed;
 }
 </style>
-<!-- 所属项目下拉面板与输入框同宽（下拉渲染在 body，不加 scoped） -->
+<!-- 下拉挂在 body：勿设大于触发器的 min-width，否则会宽过选择框 -->
 <style>
 .edit-item-project-select-dropdown.el-select-dropdown {
-  min-width: 320px !important;
   box-sizing: border-box;
 }
 </style>
