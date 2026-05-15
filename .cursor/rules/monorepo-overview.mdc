@@ -1,0 +1,28 @@
+---
+description: 国际化平台全栈仓库目录、主应用与协作约定（始终生效）
+alwaysApply: true
+---
+
+# 仓库概览
+
+本仓库为**国际化平台**前后端分离项目，以目录划分多个独立 npm 包（非单一 workspace 根 `package.json`）。
+
+## 主应用（日常开发以二者为准）
+
+| 路径 | 角色 | 启动 |
+|------|------|------|
+| `frontend/vite-vue3-ts/` | Vue 3 + Vite + TypeScript + Element Plus 管理端 | `npm install` 后 `npm run dev`（默认 Vite 5173） |
+| `backend/express-mongoDB/` | Express 5 + Mongoose + JWT 的 API | `npm install` 后 `npm run dev`（`ts-node` 跑 `server.ts`，默认端口见 `.env` / 3000） |
+
+前端通过环境变量 `VITE_APP_API_BASE` 指向后端；未配置时 `src/net/http.ts` 回退 `http://localhost:3000`。
+
+## 其他目录
+
+- `backend/node-csv-server/`：历史 CSV 本地服务（JavaScript），与 MongoDB 主后端并存时注意不要端口、职责混淆。
+- `frontend/vite-vue3-ts-csv/`：与 CSV 方案相关的前端变体；**默认需求若无说明，只改主前端 `vite-vue3-ts`**。
+
+## 通用协作约定
+
+- **敏感信息**：`.env`、`JWT_SECRET`、账号口令等不得写入仓库或示例中的真实值；默认凭据仅用于本地开发说明见根 `README.md`。
+- **提交范围**：改动应落在对应子目录的 `package.json` 所属项目内，避免无关子项目的大范围格式化。
+- **文档与脚本**：根 `README.md` 中个别命令名可能与当前 `package.json` 的 `scripts` 不完全一致；以各子项目 `package.json` 与现有 `*.ts` 入口为准。
